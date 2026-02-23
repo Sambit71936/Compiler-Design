@@ -14,3 +14,7 @@ def run_intermediate():
         print(f"{lhs.strip()} = t{temp}")
     elif "=" in line:
         print(line)
+
+
+if __name__ == "__main__":
+    run_intermediate()
