@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntax Analyser - Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg: #050505;
+            --surface: rgba(15, 15, 20, 0.7);
+            --card: rgba(20, 20, 25, 0.8);
+            --border: rgba(0, 242, 255, 0.15);
+            --border-bright: rgba(0, 242, 255, 0.3);
+            --cyan: #00f2ff;
+            --purple: #bc13fe;
+            --success: #00ff9f;
+            --error: #ff2e63;
+            --warning: #f7941d;
+            --text: #e0e0e0;
+            --text-muted: #8888b0;
+            --white: #ffffff;
+            --cyan-glow: rgba(0, 242, 255, 0.2);
+            --purple-glow: rgba(188, 19, 254, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(188, 19, 254, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            backdrop-filter: blur(12px);
+            background: rgba(5, 5, 10, 0.8);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px var(--cyan-glow);
+        }
+
+        .subtitle {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .student-info {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .student-info span {
+            color: var(--cyan);
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        nav {
+            background: rgba(5, 5, 10, 0.4);
+            padding: 12px 40px;
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 60px auto;
+            padding: 0 40px;
+        }
+
+        .sim-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: -1px;
+            background: linear-gradient(to bottom, var(--white) 30%, var(--cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .sim-desc {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+            font-size: 16px;
+        }
+
+        /* Tabs */
+        .tab-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background: var(--cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--cyan-glow);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .editor-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .editor-panel,
+        .output-panel {
+            flex: 1;
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.05);
+        }
+
+        .editor-panel:hover,
+        .output-panel:hover {
+            border-color: var(--border-bright);
+        }
+
+        .panel-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--purple);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .panel-header .badge {
+            background: var(--cyan);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 900;
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: transparent;
+            color: var(--cyan);
+            border: none;
+            padding: 25px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        .output-content {
+            height: 300px;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .output-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 60px;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000;
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+            box-shadow: 0 0 30px var(--cyan-glow), 0 0 50px var(--purple-glow);
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            color: var(--error);
+        }
+
+        .btn-sample {
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            color: var(--success);
+        }
+
+        .btn-clear:hover,
+        .btn-sample:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: currentColor;
+            transform: translateY(-2px);
+        }
+
+        /* Tree Canvas */
+        .tree-container {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.05);
+        }
+
+        canvas {
+            display: block;
+            opacity: 0.9;
+        }
+
+        /* Step Table */
+        .step-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .step-table th {
+            background: rgba(188, 19, 254, 0.2);
+            color: var(--purple);
+            padding: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .step-table td {
+            border: 1px solid rgba(0, 242, 255, 0.05);
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .step-table tr:hover {
+            background: rgba(0, 242, 255, 0.03);
+        }
+
+        .step-highlight {
+            background: rgba(0, 242, 255, 0.1) !important;
+            color: var(--cyan) !important;
+        }
+
+        /* Status badges */
+        .status-pass {
+            background: rgba(0, 255, 159, 0.1);
+            color: var(--success);
+            padding: 6px 16px;
+            border-radius: 4px;
+            border: 1px solid var(--success);
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-fail {
+            background: rgba(255, 46, 99, 0.1);
+            color: var(--error);
+            padding: 6px 16px;
+            border-radius: 4px;
+            border: 1px solid var(--error);
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-item {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            border-color: var(--cyan);
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .stat-item .stat-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .stat-item .stat-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 8px;
+            letter-spacing: 2px;
+        }
+
+        /* Grammar box */
+        .grammar-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 40px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--text);
+            line-height: 2;
+            backdrop-filter: blur(8px);
+        }
+
+        .grammar-box .rule-num {
+            color: var(--purple);
+            font-weight: 800;
+            margin-right: 4px;
+        }
+
+        .grammar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--cyan);
+            margin-bottom: 12px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        footer {
+            background: rgba(5, 5, 10, 0.8);
+            border-top: 1px solid var(--border);
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        footer span {
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1000px) {
+            .editor-section {
+                flex-direction: column;
+            }
+
+            .btn-row {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>CYBER|SYN</h1>
+            <div class="subtitle">Recursive Descent & Shift-Reduce Logic | Simulation</div>
+        </div>
+        <div class="student-info">
+            <div>Engineer: <span>Sambit</span></div>
+            <div>ID: <span>2301010008</span></div>
+        </div>
+    </header>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="simulation.html" class="active">Simulation</a>
+    </nav>
+
+    <div class="container">
+        <h2 class="sim-title">Syntax Analyser Simulation</h2>
+        <p class="sim-desc">Enter an arithmetic expression below and click "Parse" to perform syntax analysis</p>
+
+        <!-- Grammar Reference -->
+        <div class="grammar-box">
+            <span class="grammar-title">Neural Grammar Protocols (E → Expr, T → Term, F → Factor):</span>
+            <span class="rule-num">1.</span> E → E + T &nbsp;&nbsp;
+            <span class="rule-num">2.</span> E → E - T &nbsp;&nbsp;
+            <span class="rule-num">3.</span> E → T &nbsp;&nbsp;
+            <span class="rule-num">4.</span> T → T * F &nbsp;&nbsp;
+            <span class="rule-num">5.</span> T → T / F &nbsp;&nbsp;
+            <span class="rule-num">6.</span> T → F &nbsp;&nbsp;
+            <span class="rule-num">7.</span> F → ( E ) &nbsp;&nbsp;
+            <span class="rule-num">8.</span> F → id &nbsp;&nbsp;
+            <span class="rule-num">9.</span> F → num
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-num" id="statTokens">0</div>
+                <div class="stat-label">Tokens</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statSteps">0</div>
+                <div class="stat-label">Parse Steps</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statNodes">0</div>
+                <div class="stat-label">Tree Nodes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statDepth">0</div>
+                <div class="stat-label">Tree Depth</div>
+            </div>
+            <div class="stat-item">
+                <div id="statResult" class="stat-num" style="font-size:16px;">—</div>
+                <div class="stat-label">Result</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-row">
+            <div class="tab-btn active" onclick="switchTab('tabEditor')">📝 Editor</div>
+            <div class="tab-btn" onclick="switchTab('tabTree')">🌳 Parse Tree</div>
+            <div class="tab-btn" onclick="switchTab('tabSteps')">📋 Step-by-Step</div>
+        </div>
+
+        <!-- Tab 1: Editor -->
+        <div class="tab-content active" id="tabEditor">
+            <div class="editor-section">
+                <div class="editor-panel">
+                    <div class="panel-header">
+                        <span>📝 Expression Input</span>
+                        <span class="badge">INPUT</span>
+                    </div>
+                    <textarea id="sourceCode" style="height:180px;" placeholder="Enter an arithmetic expression, e.g.:
+a + b * c
+( x + y ) * z - w
+10 + 20 * ( 30 - 5 )
+num1 / num2 + num3"></textarea>
+                </div>
+                <div class="output-panel">
+                    <div class="panel-header">
+                        <span>📋 Token Stream</span>
+                        <span class="badge" id="tokenCount">OUTPUT</span>
+                    </div>
+                    <div class="output-content" id="tokenOutput" style="height:180px;">
+                        <p style="color: #555; text-align: center; margin-top: 60px;">
+                            Click <strong style="color:#e94560;">"Parse"</strong> to see tokens and parse results
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Derivation output -->
+            <div class="output-panel" style="margin-bottom: 25px;">
+                <div class="panel-header">
+                    <span>✅ Parse Result & Derivation</span>
+                    <span class="badge" id="derivBadge">DERIVATION</span>
+                </div>
+                <div class="output-content" id="derivOutput" style="height:200px;">
+                    <p style="color: #555; text-align: center; margin-top: 70px;">
+                        Leftmost derivation steps will appear here
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Parse Tree -->
+        <div class="tab-content" id="tabTree">
+            <div class="tree-container">
+                <div class="panel-header">
+                    <span>🌳 Parse Tree Visualization</span>
+                    <span class="badge">TREE</span>
+                </div>
+                <canvas id="treeCanvas" width="1200" height="500" style="width:100%; background:#0f0f1a;"></canvas>
+            </div>
+        </div>
+
+        <!-- Tab 3: Step-by-Step -->
+        <div class="tab-content" id="tabSteps">
+            <div class="output-panel">
+                <div class="panel-header">
+                    <span>📋 Shift-Reduce Parsing Steps</span>
+                    <span class="badge" id="stepBadge">STEPS</span>
+                </div>
+                <div class="output-content" id="stepsOutput" style="height:400px;">
+                    <p style="color: #555; text-align: center; margin-top: 160px;">
+                        Parse the expression to see step-by-step shift-reduce actions
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+            <button class="btn btn-sample" onclick="loadSample()">📄 Load Sample</button>
+            <button class="btn btn-run" onclick="parse()">▶ Parse</button>
+            <button class="btn btn-clear" onclick="clearAll()">🗑 Clear</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Syntax Analyzer Neural Interface | Engineer: <span>Sambit</span> | ID: <span>Sambit71936</span></p>
+        <p>&copy; 2025 Cyber-Genesis Systems</p>
+    </footer>
+
+    <script>
+        // ==================== TAB MANAGEMENT ====================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ==================== TOKENIZER ====================
+        function tokenize(input) {
+            const tokens = [];
+            let i = 0;
+            while (i < input.length) {
+                if (/\s/.test(input[i])) { i++; continue; }
+
+                // Numbers
+                if (/[0-9]/.test(input[i])) {
+                    let num = '';
+                    while (i < input.length && /[0-9.]/.test(input[i])) { num += input[i]; i++; }
+                    tokens.push({ type: 'num', value: num });
+                    continue;
+                }
+
+                // Identifiers
+                if (/[a-zA-Z_]/.test(input[i])) {
+                    let id = '';
+                    while (i < input.length && /[a-zA-Z0-9_]/.test(input[i])) { id += input[i]; i++; }
+                    tokens.push({ type: 'id', value: id });
+                    continue;
+                }
+
+                // Operators & Parentheses
+                if ('+-*/()'.includes(input[i])) {
+                    tokens.push({ type: input[i], value: input[i] });
+                    i++;
+                    continue;
+                }
+
+                tokens.push({ type: 'UNKNOWN', value: input[i] });
+                i++;
+            }
+            tokens.push({ type: '$', value: '$' }); // End marker
+            return tokens;
+        }
+
+        // ==================== RECURSIVE DESCENT PARSER ====================
+        // Grammar:
+        //   E → T E'
+        //   E' → + T E' | - T E' | ε
+        //   T → F T'
+        //   T' → * F T' | / F T' | ε
+        //   F → ( E ) | id | num
+
+        let tokens = [];
+        let pos = 0;
+        let derivation = [];
+        let treeRoot = null;
+        let parseError = null;
+
+        function peek() { return pos < tokens.length ? tokens[pos] : null; }
+        function advance() { return tokens[pos++]; }
+
+        function expect(type) {
+            const t = peek();
+            if (!t || t.type !== type) {
+                throw new Error(`Syntax Error: Expected "${type}" but found "${t ? t.value : 'EOF'}" at position ${pos + 1}`);
+            }
+            return advance();
+        }
+
+        function parseE() {
+            derivation.push('E → T E\'');
+            const tNode = parseT();
+            const ePrimeNode = parseEPrime(tNode);
+            return { label: 'E', children: ePrimeNode ? [ePrimeNode] : [tNode], node: ePrimeNode || tNode };
+        }
+
+        function parseEPrime(left) {
+            const t = peek();
+            if (t && (t.type === '+' || t.type === '-')) {
+                const op = advance();
+                derivation.push(`E' → ${op.value} T E'`);
+                const tNode = parseT();
+                const node = { label: 'E', children: [left, { label: op.value, children: [] }, tNode] };
+                const ePrimeNode = parseEPrime(node);
+                return ePrimeNode || node;
+            }
+            derivation.push('E\' → ε');
+            return left;
+        }
+
+        function parseT() {
+            derivation.push('T → F T\'');
+            const fNode = parseF();
+            const tPrimeNode = parseTPrime(fNode);
+            return tPrimeNode || fNode;
+        }
+
+        function parseTPrime(left) {
+            const t = peek();
+            if (t && (t.type === '*' || t.type === '/')) {
+                const op = advance();
+                derivation.push(`T' → ${op.value} F T'`);
+                const fNode = parseF();
+                const node = { label: 'T', children: [left, { label: op.value, children: [] }, fNode] };
+                const tPrimeNode = parseTPrime(node);
+                return tPrimeNode || node;
+            }
+            derivation.push('T\' → ε');
+            return left;
+        }
+
+        function parseF() {
+            const t = peek();
+            if (!t) throw new Error('Syntax Error: Unexpected end of input');
+
+            if (t.type === '(') {
+                derivation.push('F → ( E )');
+                advance();
+                const eNode = parseE();
+                expect(')');
+                return { label: 'F', children: [{ label: '(', children: [] }, eNode.node, { label: ')', children: [] }] };
+            }
+
+            if (t.type === 'id') {
+                derivation.push(`F → id [${t.value}]`);
+                advance();
+                return { label: t.value, children: [] };
+            }
+
+            if (t.type === 'num') {
+                derivation.push(`F → num [${t.value}]`);
+                advance();
+                return { label: t.value, children: [] };
+            }
+
+            throw new Error(`Syntax Error: Unexpected token "${t.value}" at position ${pos + 1}`);
+        }
+
+        // ==================== SHIFT-REDUCE SIMULATION ====================
+        function shiftReduceSimulation(tokenList) {
+            const steps = [];
+            const stack = [];
+            const input = tokenList.map(t => (t.type === 'id' || t.type === 'num') ? t.type : t.value);
+            let stepNum = 0;
+
+            while (input.length > 0 || stack.length > 1 || (stack.length === 1 && stack[0] !== 'E')) {
+                stepNum++;
+                const stackStr = stack.join(' ') || '(empty)';
+                const inputStr = input.join(' ') || '$';
+
+                // Try to reduce
+                let reduced = false;
+
+                // F → id | num
+                if (stack.length >= 1 && (stack[stack.length - 1] === 'id' || stack[stack.length - 1] === 'num')) {
+                    const val = stack.pop();
+                    steps.push({ step: stepNum, stack: stackStr, input: inputStr, action: `Reduce: F → ${val}` });
+                    stack.push('F');
+                    reduced = true;
+                }
+                // F → ( E )
+                else if (stack.length >= 3 && stack[stack.length - 3] === '(' && stack[stack.length - 2] === 'E' && stack[stack.length - 1] === ')') {
+                    stack.pop(); stack.pop(); stack.pop();
+                    steps.push({ step: stepNum, stack: stackStr, input: inputStr, action: 'Reduce: F → ( E )' });
+                    stack.push('F');
+                    reduced = true;
+                }
+                // T → F
+                else if (stack.length >= 1 && stack[stack.length - 1] === 'F' &&
+                    (stack.length < 2 || (stack[stack.length - 2] !== '*' && stack[stack.length - 2] !== '/'))) {
+                    stack.pop();
+                    steps.push({ step: stepNum, stack: stackStr, input: inputStr, action: 'Reduce: T → F' });
+                    stack.push('T');
+                    reduced = true;
+                }
+                // T → T * F | T / F
+                else if (stack.length >= 3 && stack[stack.length - 1] === 'F' &&
+                    (stack[stack.length - 2] === '*' || stack[stack.length - 2] === '/') && stack[stack.length - 3] === 'T') {
+                    const op = stack[stack.length - 2];
+                    stack.pop(); stack.pop(); stack.pop();
+                    steps.push({ step: stepNum, stack: stackStr, input: inputStr, action: `Reduce: T → T ${op} F` });
+                    stack.push('T');
+                    reduced = true;
+                }
+                // E → T (only when next is +, -, ), or $)
+                else if (stack.length >= 1 && stack[stack.length - 1] === 'T' &&
+                    (stack.length < 2 || (stack[stack.length - 2] !== '+' && stack[stack.length - 2] !== '-')) &&
+                    (input.length === 0 || input[0] === '+' || input[0] === '-' || input[0] === ')' || input[0] === '$')) {
+                    stack.pop();
+                    steps.push({ step: stepNum, stack: stackStr, input: inputStr, action: 'Reduce: E → T' });
+                    stack.push('E');
+                    reduced = true;
+                }
+                // E → E + T | E - T
+                else if (stack.length >= 3 && stack[stack.length - 1] === 'T' &&
+                    (stack[stack.length - 2] === '+' || stack[stack.length - 2] === '-') && stack[stack.length - 3] === 'E' &&
+                    (input.length === 0 || input[0] === '+' || input[0] === '-' || input[0] === ')' || input[0] === '$')) {
+                    const op = stack[stack.length - 2];
+                    stack.pop(); stack.pop(); stack.pop();
+                    steps.push({ step: stepNum, stack: stackStr, input: inputStr, action: `Reduce: E → E ${op} T` });
+                    stack.push('E');
+                    reduced = true;
+                }
+
+                // Shift
+                if (!reduced) {
+                    if (input.length === 0 || (input.length === 1 && input[0] === '$')) {
+                        if (stack.length === 1 && stack[0] === 'E') {
+                            steps.push({ step: stepNum, stack: 'E', input: '$', action: '✅ ACCEPT' });
+                        } else {
+                            steps.push({ step: stepNum, stack: stackStr, input: '$', action: '❌ ERROR' });
+                        }
+                        break;
+                    }
+                    const sym = input.shift();
+                    if (sym === '$') {
+                        if (stack.length === 1 && stack[0] === 'E') {
+                            steps.push({ step: stepNum, stack: stackStr, input: '$', action: '✅ ACCEPT' });
+                        } else {
+                            steps.push({ step: stepNum, stack: stackStr, input: '$', action: '❌ ERROR' });
+                        }
+                        break;
+                    }
+                    steps.push({ step: stepNum, stack: stackStr, input: sym + ' ' + input.join(' '), action: `Shift: ${sym}` });
+                    stack.push(sym);
+                    reduced = false;
+                }
+
+                if (stepNum > 100) {
+                    steps.push({ step: stepNum, stack: stack.join(' '), input: input.join(' '), action: '⚠️ Max steps reached' });
+                    break;
+                }
+            }
+
+            if (stack.length === 1 && stack[0] === 'E' && steps[steps.length - 1].action.indexOf('ACCEPT') === -1) {
+                stepNum++;
+                steps.push({ step: stepNum, stack: 'E', input: '$', action: '✅ ACCEPT' });
+            }
+
+            return steps;
+        }
+
+        // ==================== TREE DRAWING ====================
+        function countNodes(node) {
+            if (!node) return 0;
+            let c = 1;
+            if (node.children) node.children.forEach(ch => c += countNodes(ch));
+            return c;
+        }
+
+        function treeDepth(node) {
+            if (!node || !node.children || node.children.length === 0) return 1;
+            let maxD = 0;
+            node.children.forEach(ch => { const d = treeDepth(ch); if (d > maxD) maxD = d; });
+            return maxD + 1;
+        }
+
+        function layoutTree(node, depth, left, right) {
+            if (!node) return;
+            const x = (left + right) / 2;
+            const y = depth * 70 + 50;
+            node.x = x;
+            node.y = y;
+            if (node.children && node.children.length > 0) {
+                const width = (right - left) / node.children.length;
+                node.children.forEach((ch, i) => {
+                    layoutTree(ch, depth + 1, left + i * width, left + (i + 1) * width);
+                });
+            }
+        }
+
+        function drawTree(node, ctx) {
+            if (!node) return;
+            if (node.children) {
+                node.children.forEach(ch => {
+                    if (ch && ch.x !== undefined) {
+                        ctx.beginPath();
+                        ctx.moveTo(node.x, node.y + 12);
+                        ctx.lineTo(ch.x, ch.y - 12);
+                        ctx.strokeStyle = '#444';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                });
+                node.children.forEach(ch => drawTree(ch, ctx));
+            }
+            // Draw node
+            const isLeaf = !node.children || node.children.length === 0;
+            const isOp = '+-*/'.includes(node.label);
+            const isParen = node.label === '(' || node.label === ')';
+            let bgColor = isLeaf ? (isOp ? '#9b59b6' : isParen ? '#1abc9c' : '#3498db') : '#e94560';
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
+            ctx.fillStyle = bgColor;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const label = node.label.length > 4 ? node.label.substring(0, 4) : node.label;
+            ctx.fillText(label, node.x, node.y);
+        }
+
+        // ==================== MAIN PARSE ====================
+        function parse() {
+            const input = document.getElementById('sourceCode').value.trim();
+            if (!input) {
+                document.getElementById('tokenOutput').innerHTML = '<p style="color:#e94560; text-align:center; margin-top:60px;">⚠️ Please enter an expression first!</p>';
+                return;
+            }
+
+            // Tokenize
+            tokens = tokenize(input);
+            pos = 0;
+            derivation = [];
+            treeRoot = null;
+            parseError = null;
+
+            // Display tokens
+            let tokenHtml = '';
+            const typeColors = { 'id': '#3498db', 'num': '#2ecc71', '+': '#9b59b6', '-': '#9b59b6', '*': '#9b59b6', '/': '#9b59b6', '(': '#1abc9c', ')': '#1abc9c', '$': '#666' };
+            tokens.forEach((t, i) => {
+                const color = typeColors[t.type] || '#e74c3c';
+                tokenHtml += `<div style="display:flex;padding:4px 0;border-bottom:1px solid #222;">
+                <span style="color:#666;width:30px;">${i + 1}</span>
+                <span style="background:${color};color:#fff;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:bold;width:60px;text-align:center;margin-right:10px;">${escHtml(t.type)}</span>
+                <span style="color:#eee;">${escHtml(t.value)}</span></div>`;
+            });
+            document.getElementById('tokenOutput').innerHTML = tokenHtml;
+            document.getElementById('tokenCount').textContent = (tokens.length - 1) + ' TOKENS';
+
+            // Parse (Recursive Descent)
+            let success = false;
+            try {
+                treeRoot = parseE();
+                const remaining = peek();
+                if (remaining && remaining.type !== '$') {
+                    throw new Error(`Syntax Error: Unexpected token "${remaining.value}" after valid expression at position ${pos + 1}`);
+                }
+                success = true;
+            } catch (e) {
+                parseError = e.message;
+                success = false;
+            }
+
+            // Derivation output
+            let derivHtml = '';
+            if (success) {
+                derivHtml += `<div style="margin-bottom:15px;"><span class="status-pass">✅ PARSING SUCCESSFUL</span></div>`;
+                derivHtml += `<div style="color:#e94560;font-weight:bold;margin-bottom:10px;">Leftmost Derivation Steps:</div>`;
+                derivation.forEach((step, i) => {
+                    derivHtml += `<div style="padding:3px 0;color:#ccc;"><span style="color:#e94560;font-weight:bold;margin-right:8px;">${i + 1}.</span>${escHtml(step)}</div>`;
+                });
+            } else {
+                derivHtml += `<div style="margin-bottom:15px;"><span class="status-fail">❌ PARSING FAILED</span></div>`;
+                derivHtml += `<div style="color:#e74c3c;font-size:15px;margin-top:10px;">${escHtml(parseError)}</div>`;
+                if (derivation.length > 0) {
+                    derivHtml += `<div style="color:#e94560;font-weight:bold;margin:15px 0 10px;">Steps before error:</div>`;
+                    derivation.forEach((step, i) => {
+                        derivHtml += `<div style="padding:3px 0;color:#ccc;"><span style="color:#e94560;font-weight:bold;margin-right:8px;">${i + 1}.</span>${escHtml(step)}</div>`;
+                    });
+                }
+            }
+            document.getElementById('derivOutput').innerHTML = derivHtml;
+            document.getElementById('derivBadge').textContent = derivation.length + ' STEPS';
+
+            // Shift-Reduce Steps
+            const srTokens = tokenize(input);
+            const srSteps = shiftReduceSimulation(srTokens);
+            let stepsHtml = '<table class="step-table"><tr><th>Step</th><th>Stack</th><th>Input</th><th>Action</th></tr>';
+            srSteps.forEach(s => {
+                const isAccept = s.action.includes('ACCEPT');
+                const isError = s.action.includes('ERROR');
+                const cls = isAccept ? 'step-highlight' : '';
+                const actionColor = isAccept ? '#2ecc71' : isError ? '#e74c3c' : s.action.startsWith('Shift') ? '#3498db' : '#f39c12';
+                stepsHtml += `<tr class="${cls}">
+                <td>${s.step}</td>
+                <td style="color:#00ff88;">${escHtml(s.stack)}</td>
+                <td style="color:#aaa;">${escHtml(s.input)}</td>
+                <td style="color:${actionColor};font-weight:bold;">${escHtml(s.action)}</td></tr>`;
+            });
+            stepsHtml += '</table>';
+            document.getElementById('stepsOutput').innerHTML = stepsHtml;
+            document.getElementById('stepBadge').textContent = srSteps.length + ' STEPS';
+
+            // Draw parse tree
+            const canvas = document.getElementById('treeCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (success && treeRoot && treeRoot.node) {
+                layoutTree(treeRoot.node, 0, 0, canvas.width);
+                drawTree(treeRoot.node, ctx);
+            } else {
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = '18px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.fillText(parseError || 'No tree to display', canvas.width / 2, canvas.height / 2);
+            }
+
+            // Stats
+            const nodeCount = treeRoot && treeRoot.node ? countNodes(treeRoot.node) : 0;
+            const depth = treeRoot && treeRoot.node ? treeDepth(treeRoot.node) : 0;
+            document.getElementById('statTokens').textContent = tokens.length - 1;
+            document.getElementById('statSteps').textContent = derivation.length;
+            document.getElementById('statNodes').textContent = nodeCount;
+            document.getElementById('statDepth').textContent = depth;
+            document.getElementById('statResult').innerHTML = success
+                ? '<span class="status-pass">PASS</span>'
+                : '<span class="status-fail">FAIL</span>';
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function clearAll() {
+            document.getElementById('sourceCode').value = '';
+            document.getElementById('tokenOutput').innerHTML = '<p style="color:#555;text-align:center;margin-top:60px;">Click <strong style="color:#e94560;">"Parse"</strong> to see tokens and parse results</p>';
+            document.getElementById('derivOutput').innerHTML = '<p style="color:#555;text-align:center;margin-top:70px;">Leftmost derivation steps will appear here</p>';
+            document.getElementById('stepsOutput').innerHTML = '<p style="color:#555;text-align:center;margin-top:160px;">Parse the expression to see step-by-step shift-reduce actions</p>';
+            document.getElementById('tokenCount').textContent = 'OUTPUT';
+            document.getElementById('derivBadge').textContent = 'DERIVATION';
+            document.getElementById('stepBadge').textContent = 'STEPS';
+            document.getElementById('statTokens').textContent = '0';
+            document.getElementById('statSteps').textContent = '0';
+            document.getElementById('statNodes').textContent = '0';
+            document.getElementById('statDepth').textContent = '0';
+            document.getElementById('statResult').innerHTML = '—';
+            const canvas = document.getElementById('treeCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function loadSample() {
+            document.getElementById('sourceCode').value = 'a + b * ( c - d ) / e';
+        }
+    </script>
+
+</body>
+
+</html>

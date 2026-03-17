@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexical Analyser - Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg: #050505;
+            --surface: rgba(15, 15, 20, 0.7);
+            --card: rgba(20, 20, 25, 0.8);
+            --border: rgba(0, 242, 255, 0.15);
+            --border-bright: rgba(0, 242, 255, 0.3);
+            --cyan: #00f2ff;
+            --purple: #bc13fe;
+            --success: #00ff9f;
+            --error: #ff2e63;
+            --warning: #f7941d;
+            --text: #e0e0e0;
+            --text-muted: #8888b0;
+            --white: #ffffff;
+            --cyan-glow: rgba(0, 242, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(188, 19, 254, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            backdrop-filter: blur(12px);
+            background: rgba(5, 5, 10, 0.8);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px var(--cyan-glow);
+        }
+
+        .subtitle {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .student-info {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .student-info span {
+            color: var(--cyan);
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        nav {
+            background: rgba(5, 5, 10, 0.4);
+            padding: 12px 40px;
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 60px auto;
+            padding: 0 40px;
+        }
+
+        .sim-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: -1px;
+            background: linear-gradient(to bottom, var(--white) 30%, var(--cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .sim-desc {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+            font-size: 16px;
+        }
+
+        .editor-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .editor-panel,
+        .output-panel {
+            flex: 1;
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.05);
+        }
+
+        .editor-panel:hover,
+        .output-panel:hover {
+            border-color: var(--border-bright);
+        }
+
+        .panel-header {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--purple);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .panel-header .badge {
+            background: var(--cyan);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 900;
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            background: transparent;
+            color: var(--cyan);
+            border: none;
+            padding: 25px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+        }
+
+        .output-content {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .output-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .output-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 60px;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000;
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+            box-shadow: 0 0 30px var(--cyan-glow), 0 0 50px rgba(188, 19, 254, 0.2);
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            color: var(--error);
+        }
+
+        .btn-sample {
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            color: var(--success);
+        }
+
+        .btn-clear:hover,
+        .btn-sample:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: currentColor;
+            transform: translateY(-2px);
+        }
+
+        /* Token row styling */
+        .token-row {
+            display: flex;
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.05);
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .token-row:hover {
+            background: rgba(0, 242, 255, 0.03);
+        }
+
+        .token-line {
+            color: var(--text-muted);
+            width: 50px;
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
+        .token-type {
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            width: 100px;
+            text-align: center;
+            margin-right: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid transparent;
+        }
+
+        .token-value {
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .type-KEYWORD {
+            color: var(--purple);
+            border-color: var(--purple);
+            background: rgba(188, 19, 254, 0.1);
+        }
+
+        .type-IDENTIFIER {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: var(--cyan-glow);
+        }
+
+        .type-NUMBER {
+            color: var(--success);
+            border-color: var(--success);
+            background: rgba(0, 255, 159, 0.1);
+        }
+
+        .type-STRING {
+            color: var(--warning);
+            border-color: var(--warning);
+            background: rgba(247, 148, 29, 0.1);
+        }
+
+        .type-OPERATOR {
+            color: var(--white);
+            opacity: 0.8;
+        }
+
+        .type-SEPARATOR {
+            color: var(--text-muted);
+        }
+
+        .type-UNKNOWN {
+            color: var(--error);
+            border-color: var(--error);
+            background: rgba(255, 46, 99, 0.1);
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-item {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            border-color: var(--cyan);
+            transform: translateY(-4px);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .stat-item .stat-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .stat-item .stat-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 8px;
+            letter-spacing: 2px;
+        }
+
+        footer {
+            background: rgba(5, 5, 10, 0.8);
+            border-top: 1px solid var(--border);
+            padding: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        footer span {
+            color: var(--cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+        }
+
+        @media (max-width: 1000px) {
+            .editor-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>CYBER|LEX</h1>
+            <div class="subtitle">Neural Tokenization Interface | Simulation</div>
+        </div>
+        <div class="student-info">
+            <div>Engineer: <span>Sambit</span></div>
+            <div>ID: <span>2301010008</span></div>
+        </div>
+    </header>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="simulation.html" class="active">Simulation</a>
+    </nav>
+
+    <div class="container">
+        <h2 class="sim-title">Lexical Analyser Simulation</h2>
+        <p class="sim-desc">Enter C-like source code below and click "Analyse" to tokenize it</p>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-label">Total Tokens</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statKeywords">0</div>
+                <div class="stat-label">Keywords</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statIdentifiers">0</div>
+                <div class="stat-label">Identifiers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statNumbers">0</div>
+                <div class="stat-label">Numbers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statOperators">0</div>
+                <div class="stat-label">Operators</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statSeparators">0</div>
+                <div class="stat-label">Separators</div>
+            </div>
+        </div>
+
+        <!-- Editor & Output -->
+        <div class="editor-section">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span>📝 Source Code</span>
+                    <span class="badge">INPUT</span>
+                </div>
+                <textarea id="sourceCode" placeholder="// Enter your C code here...
+int main() {
+    int a = 10;
+    float b = 3.14;
+    if (a > b) {
+        return a;
+    }
+    return 0;
+}"></textarea>
+            </div>
+            <div class="output-panel">
+                <div class="panel-header">
+                    <span>📋 Token Stream</span>
+                    <span class="badge" id="tokenCount">OUTPUT</span>
+                </div>
+                <div class="output-content" id="outputArea">
+                    <p style="color: #555; text-align: center; margin-top: 120px;">
+                        Click <strong style="color:#e94560;">"Analyse"</strong> to see tokens here
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-row">
+            <button class="btn btn-sample" onclick="loadSample()">📄 Load Sample</button>
+            <button class="btn btn-run" onclick="analyse()">▶ Analyse</button>
+            <button class="btn btn-clear" onclick="clearAll()">🗑 Clear</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Lexical Analyser Neural Interface | Engineer: <span>Sambit</span> | ID: <span>Sambit71936</span></p>
+        <p>&copy; 2025 Cyber-Genesis Systems</p>
+    </footer>
+
+    <script>
+        // Keywords list (matches your lexical.c)
+        const KEYWORDS = [
+            "int", "float", "if", "else", "return",
+            "while", "for", "char", "double", "void"
+        ];
+
+        function isKeyword(word) {
+            return KEYWORDS.includes(word);
+        }
+
+        function isAlpha(c) {
+            return /[a-zA-Z_]/.test(c);
+        }
+
+        function isAlnum(c) {
+            return /[a-zA-Z0-9_]/.test(c);
+        }
+
+        function isDigit(c) {
+            return /[0-9]/.test(c);
+        }
+
+        function isOperator(c) {
+            return "+-*/=%!<>&|".includes(c);
+        }
+
+        function isSeparator(c) {
+            return ";,(){}[]".includes(c);
+        }
+
+        // Lexical analyser — mirrors your lexical.c logic
+        function lexicalAnalyse(input) {
+            const tokens = [];
+            let i = 0;
+            let lineNo = 1;
+
+            while (i < input.length) {
+                let c = input[i];
+
+                // Track line numbers
+                if (c === '\n') {
+                    lineNo++;
+                    i++;
+                    continue;
+                }
+
+                // Skip whitespace
+                if (/\s/.test(c)) {
+                    i++;
+                    continue;
+                }
+
+                // Skip single-line comments
+                if (c === '/' && i + 1 < input.length && input[i + 1] === '/') {
+                    while (i < input.length && input[i] !== '\n') i++;
+                    continue;
+                }
+
+                // Skip multi-line comments
+                if (c === '/' && i + 1 < input.length && input[i + 1] === '*') {
+                    i += 2;
+                    while (i + 1 < input.length && !(input[i] === '*' && input[i + 1] === '/')) {
+                        if (input[i] === '\n') lineNo++;
+                        i++;
+                    }
+                    i += 2;
+                    continue;
+                }
+
+                // Identifiers and Keywords
+                if (isAlpha(c)) {
+                    let word = '';
+                    while (i < input.length && isAlnum(input[i])) {
+                        word += input[i];
+                        i++;
+                    }
+                    if (isKeyword(word)) {
+                        tokens.push({ line: lineNo, type: 'KEYWORD', value: word });
+                    } else {
+                        tokens.push({ line: lineNo, type: 'IDENTIFIER', value: word });
+                    }
+                    continue;
+                }
+
+                // Numbers (integer and float)
+                if (isDigit(c)) {
+                    let num = '';
+                    let dotSeen = false;
+                    while (i < input.length && (isDigit(input[i]) || (input[i] === '.' && !dotSeen))) {
+                        if (input[i] === '.') dotSeen = true;
+                        num += input[i];
+                        i++;
+                    }
+                    tokens.push({ line: lineNo, type: 'NUMBER', value: num });
+                    continue;
+                }
+
+                // String literals
+                if (c === '"') {
+                    let str = '';
+                    i++; // skip opening quote
+                    while (i < input.length && input[i] !== '"') {
+                        str += input[i];
+                        i++;
+                    }
+                    i++; // skip closing quote
+                    tokens.push({ line: lineNo, type: 'STRING', value: '"' + str + '"' });
+                    continue;
+                }
+
+                // Operators
+                if (isOperator(c)) {
+                    tokens.push({ line: lineNo, type: 'OPERATOR', value: c });
+                    i++;
+                    continue;
+                }
+
+                // Separators
+                if (isSeparator(c)) {
+                    tokens.push({ line: lineNo, type: 'SEPARATOR', value: c });
+                    i++;
+                    continue;
+                }
+
+                // Unknown
+                tokens.push({ line: lineNo, type: 'UNKNOWN', value: c });
+                i++;
+            }
+
+            return tokens;
+        }
+
+        function analyse() {
+            const source = document.getElementById('sourceCode').value;
+            const output = document.getElementById('outputArea');
+            const tokenCountBadge = document.getElementById('tokenCount');
+
+            if (!source.trim()) {
+                output.innerHTML = '<p style="color:#e94560; text-align:center; margin-top:120px;">⚠️ Please enter some source code first!</p>';
+                return;
+            }
+
+            const tokens = lexicalAnalyse(source);
+
+            // Update stats
+            let stats = { KEYWORD: 0, IDENTIFIER: 0, NUMBER: 0, STRING: 0, OPERATOR: 0, SEPARATOR: 0, UNKNOWN: 0 };
+            tokens.forEach(t => { stats[t.type] = (stats[t.type] || 0) + 1; });
+
+            document.getElementById('statTotal').textContent = tokens.length;
+            document.getElementById('statKeywords').textContent = stats.KEYWORD;
+            document.getElementById('statIdentifiers').textContent = stats.IDENTIFIER;
+            document.getElementById('statNumbers').textContent = stats.NUMBER;
+            document.getElementById('statOperators').textContent = stats.OPERATOR;
+            document.getElementById('statSeparators').textContent = stats.SEPARATOR;
+            tokenCountBadge.textContent = tokens.length + ' TOKENS';
+
+            // Render tokens
+            let html = '';
+            tokens.forEach((token, idx) => {
+                html += `
+                    <div class="token-row">
+                        <span class="token-line">L${token.line}</span>
+                        <span class="token-type type-${token.type}">${token.type}</span>
+                        <span class="token-value">${escapeHtml(token.value)}</span>
+                    </div>`;
+            });
+
+            output.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function clearAll() {
+            document.getElementById('sourceCode').value = '';
+            document.getElementById('outputArea').innerHTML = '<p style="color: #555; text-align: center; margin-top: 120px;">Click <strong style="color:#e94560;">"Analyse"</strong> to see tokens here</p>';
+            document.getElementById('tokenCount').textContent = 'OUTPUT';
+            document.getElementById('statTotal').textContent = '0';
+            document.getElementById('statKeywords').textContent = '0';
+            document.getElementById('statIdentifiers').textContent = '0';
+            document.getElementById('statNumbers').textContent = '0';
+            document.getElementById('statOperators').textContent = '0';
+            document.getElementById('statSeparators').textContent = '0';
+        }
+
+        function loadSample() {
+            document.getElementById('sourceCode').value =
+                `int main() {
+    int a = 10;
+    float b = 3.14;
+    char name = "Sambit";
+
+    if (a > b) {
+        return a;
+    }
+
+    for (int i = 0; i < a; i++) {
+        b = b + 1.5;
+    }
+
+    while (a != 0) {
+        a = a - 1;
+    }
+
+    return 0;
+}`;
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,1432 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Code Optimizer — Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+    :root {
+      --bg: #050505;
+      --surface: rgba(15, 15, 20, 0.7);
+      --card: rgba(20, 20, 25, 0.8);
+      --card-alt: rgba(30, 30, 40, 0.6);
+      --border: rgba(0, 242, 255, 0.15);
+      --border-bright: rgba(0, 242, 255, 0.3);
+      --cyan: #00f2ff;
+      --purple: #bc13fe;
+      --success: #00ff9f;
+      --error: #ff2e63;
+      --warning: #f7941d;
+      --text: #e0e0e0;
+      --text-muted: #8888b0;
+      --white: #ffffff;
+      --cyan-glow: rgba(0, 242, 255, 0.2);
+      --purple-glow: rgba(188, 19, 254, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(188, 19, 254, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.05) 0%, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      backdrop-filter: blur(12px);
+      background: rgba(5, 5, 10, 0.8);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .cg-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--cyan);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .cg-nav {
+      display: flex;
+      gap: 24px;
+    }
+
+    .cg-nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .cg-nav a:hover,
+    .cg-nav a.active {
+      color: var(--cyan);
+      text-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .cg-nav a.active::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 56px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(to bottom, var(--white) 30%, var(--cyan));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .hero .tagline {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    .hero .tagline strong {
+      color: var(--purple);
+      font-weight: 700;
+    }
+
+    /* ── GRID & CARDS ── */
+    .page {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+    }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--purple);
+      margin-bottom: 20px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+
+    @media (min-width: 1100px) {
+      .grid {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 30px;
+      position: relative;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 30px rgba(0, 242, 255, 0.05);
+    }
+
+    .card:hover {
+      border-color: var(--border-bright);
+      box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0.5;
+    }
+
+    .card-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 400px;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--cyan);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      tab-size: 4;
+      transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-red {
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 28px;
+      font-weight: 800;
+      font-size: 14px;
+      font-family: 'Orbitron', sans-serif;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 20px var(--cyan-glow);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-red:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--cyan-glow), 0 0 50px var(--purple-glow);
+      filter: brightness(1.2);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border-bright);
+      color: var(--cyan);
+      border-radius: 6px;
+      padding: 11px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Orbitron', sans-serif;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+    }
+
+    .btn-ghost:hover {
+      background: var(--cyan-glow);
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .status {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.4;
+      }
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .tab:hover {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab.active {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    /* ── BADGES ── */
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 1px solid transparent;
+    }
+
+    .badge.KEYWORD {
+      color: var(--purple);
+      border-color: var(--purple);
+      background: var(--purple-glow);
+    }
+
+    .badge.IDENTIFIER {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+
+    .badge.INTEGER,
+    .badge.FLOAT {
+      color: var(--success);
+      border-color: var(--success);
+      background: rgba(0, 255, 159, 0.1);
+    }
+
+    .badge.STRING {
+      color: var(--warning);
+      border-color: var(--warning);
+      background: rgba(247, 148, 29, 0.1);
+    }
+
+    .badge.success {
+      color: var(--success);
+      background: rgba(0, 255, 159, 0.1);
+    }
+
+    .badge.info {
+      color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      max-height: 500px;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    td.val {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--cyan);
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 60px 20px;
+      font-size: 14px;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* ── CODE DISPLAYS ── */
+    .ast-wrap,
+    .tac-wrap {
+      max-height: 500px;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 20px;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .tac-wrap {
+      padding: 0;
+    }
+
+    .tac-line {
+      display: flex;
+      align-items: baseline;
+      padding: 6px 20px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(0, 242, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .tac-line:hover {
+      background: rgba(0, 242, 255, 0.03);
+    }
+
+    .tac-line.removed {
+      background: rgba(255, 46, 99, 0.1);
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+
+    .tac-line.optimized {
+      background: rgba(0, 255, 159, 0.05);
+      border-left: 3px solid var(--success);
+    }
+
+    .tac-line.new-line {
+      background: rgba(0, 242, 255, 0.05);
+      border-left: 3px solid var(--cyan);
+    }
+
+    .tac-lineno {
+      color: var(--text-muted);
+      min-width: 40px;
+      text-align: right;
+      margin-right: 20px;
+      font-size: 11px;
+      opacity: 0.5;
+    }
+
+    .tac-label {
+      color: var(--warning);
+      font-weight: 700;
+    }
+
+    .tac-op {
+      color: var(--purple);
+      font-weight: 700;
+    }
+
+    .tac-var {
+      color: var(--cyan);
+    }
+
+    .tac-lit {
+      color: var(--success);
+    }
+
+    .tac-assign {
+      color: var(--white);
+      opacity: 0.8;
+    }
+
+    .tac-jump {
+      color: var(--warning);
+      font-weight: 700;
+    }
+
+    .tac-comment {
+      color: var(--text-muted);
+      font-style: italic;
+      opacity: 0.6;
+    }
+
+    .tac-func {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    /* ── OPT CARDS ── */
+    .opt-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .opt-card:hover {
+      border-color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+
+    .opt-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .opt-icon {
+      font-size: 18px;
+    }
+
+    .opt-tag {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    .opt-tag.fold {
+      color: var(--success);
+      background: rgba(0, 255, 159, 0.1);
+    }
+
+    .opt-tag.prop {
+      color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+
+    .opt-tag.dead {
+      color: var(--error);
+      background: rgba(255, 46, 99, 0.1);
+    }
+
+    .opt-tag.strength {
+      color: var(--warning);
+      background: rgba(247, 148, 29, 0.1);
+    }
+
+    .opt-tag.subexpr {
+      color: var(--purple);
+      background: var(--purple-glow);
+    }
+
+    .opt-tag.algebraic {
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .opt-detail {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    /* ── COMPARE ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 800px) {
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .compare-col {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .compare-header {
+      padding: 10px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: center;
+      letter-spacing: 1.5px;
+    }
+
+    .compare-header.before {
+      background: rgba(255, 46, 99, 0.1);
+      color: var(--error);
+    }
+
+    .compare-header.after {
+      background: rgba(0, 255, 159, 0.1);
+      color: var(--success);
+    }
+
+    /* ── STATS ── */
+    .parse-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--cyan);
+    }
+
+    .stat-value.ok {
+      color: var(--success);
+    }
+
+    .stat-value.blue {
+      color: var(--cyan);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
+    .errors-wrap {
+      border: 1px solid var(--error);
+      background: rgba(255, 46, 99, 0.05);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .error-item {
+      color: var(--error);
+      font-size: 13px;
+      font-family: "JetBrains Mono", monospace;
+      margin-bottom: 6px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    footer {
+      margin-top: 60px;
+      padding: 40px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    footer strong {
+      color: var(--cyan);
+      font-family: 'Orbitron', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div class="cg-logo">CYBER|OPT</div>
+    <nav class="cg-nav">
+      <a class="active" href="#">Optimizer</a>
+      <a href="#">Tokens</a>
+      <a href="#">AST</a>
+      <a href="#">TAC</a>
+      <a href="#">Optimized</a>
+    </nav>
+  </div>
+
+  <div class="hero">
+    <h1>Code Optimization — Simulation</h1>
+    <p class="tagline">Browser-only lexer + parser + TAC generator + <strong>code optimizer</strong>. Paste C or Python
+      code and click <strong>Optimize</strong> to see constant folding, constant propagation, dead code elimination,
+      strength reduction, common sub-expression elimination, and algebraic simplifications applied to three-address
+      code.</p>
+  </div>
+
+  <div class="page">
+    <div class="grid">
+      <!-- LEFT -->
+      <div>
+        <div class="section-title">Source Code</div>
+        <div class="card">
+          <div class="card-label">Input</div>
+          <textarea id="code" spellcheck="false">#include <stdio.h>
+
+int main() {
+    int a = 5;
+    int b = 10;
+    int c = 2 + 3;
+    int d = a * 2;
+    int e = a + b * 2;
+
+    int x = a + b;
+    int y = a + b;
+
+    int unused = 99;
+
+    if (a < b) {
+        c = c + 0;
+        d = d * 1;
+        e = e + a * 0;
+    } else {
+        c = c - 0;
+    }
+
+    while (c > 0) {
+        c = c - 1;
+    }
+
+    int power = d * 8;
+
+    return c;
+}</textarea>
+          <div class="controls">
+            <button class="btn-red" id="run">▶ Optimize</button>
+            <button class="btn-ghost" id="demo-c">Demo C</button>
+            <button class="btn-ghost" id="demo-py">Demo Python</button>
+            <button class="btn-ghost" id="clear">Clear</button>
+            <span class="status" id="status">Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <div class="section-title">Optimization Results</div>
+        <div class="card">
+          <div class="tabs">
+            <button class="tab active" data-tab="tokens">Tokens</button>
+            <button class="tab" data-tab="ast">AST</button>
+            <button class="tab" data-tab="original">Original TAC</button>
+            <button class="tab" data-tab="optimized">Optimized TAC</button>
+            <button class="tab" data-tab="opts">Optimizations</button>
+            <button class="tab" data-tab="compare">Compare</button>
+            <button class="tab" data-tab="summary">Summary</button>
+          </div>
+
+          <div class="errors-wrap hidden" id="errors-panel"></div>
+
+          <!-- Tokens -->
+          <div id="panel-tokens">
+            <div class="badge-row" id="token-summary"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Ln</th>
+                    <th>Col</th>
+                  </tr>
+                </thead>
+                <tbody id="token-tbody">
+                  <tr>
+                    <td colspan="5" class="empty">Click <strong>▶ Optimize</strong> to begin.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- AST -->
+          <div id="panel-ast" class="hidden">
+            <div class="ast-wrap" id="ast-container">
+              <div class="empty">Click <strong>▶ Optimize</strong> to build AST.</div>
+            </div>
+          </div>
+
+          <!-- Original TAC -->
+          <div id="panel-original" class="hidden">
+            <div class="badge-row" id="orig-summary"></div>
+            <div class="tac-wrap" id="orig-container">
+              <div class="empty" style="padding:40px">Click <strong>▶ Optimize</strong> to produce TAC.</div>
+            </div>
+          </div>
+
+          <!-- Optimized TAC -->
+          <div id="panel-optimized" class="hidden">
+            <div class="badge-row" id="opt-tac-summary"></div>
+            <div class="tac-wrap" id="opt-container">
+              <div class="empty" style="padding:40px">Click <strong>▶ Optimize</strong> to see optimized TAC.</div>
+            </div>
+          </div>
+
+          <!-- Optimizations Applied -->
+          <div id="panel-opts" class="hidden">
+            <div class="badge-row" id="opts-summary"></div>
+            <div id="opts-list">
+              <div class="empty">Click <strong>▶ Optimize</strong> to see applied optimizations.</div>
+            </div>
+          </div>
+
+          <!-- Compare -->
+          <div id="panel-compare" class="hidden">
+            <div class="parse-summary" id="compare-stats"></div>
+            <div class="compare-grid">
+              <div class="compare-col">
+                <div class="compare-header before">Before Optimization</div>
+                <div class="tac-wrap" id="compare-before" style="border:none;border-radius:0">
+                  <div class="empty" style="padding:30px">—</div>
+                </div>
+              </div>
+              <div class="compare-col">
+                <div class="compare-header after">After Optimization</div>
+                <div class="tac-wrap" id="compare-after" style="border:none;border-radius:0">
+                  <div class="empty" style="padding:30px">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div id="panel-summary" class="hidden">
+            <div class="parse-summary" id="summary-stats"></div>
+            <div class="card-label" style="margin-top:10px">Optimization Breakdown</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Optimization</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+                <tbody id="opt-breakdown-tbody">
+                  <tr>
+                    <td colspan="2" class="empty">No data yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>Engineer: <strong>Sambit</strong></div>
+    <div>ID: <strong>Sambit71936</strong></div>
+  </footer>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    //  LEXER
+    // ═══════════════════════════════════════════════════════════
+    const KEYWORDS = new Set(["auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if", "int", "long", "register", "return", "short", "signed", "sizeof", "static", "struct", "switch", "typedef", "union", "unsigned", "void", "volatile", "while", "print", "input", "def", "class", "import", "from", "as", "try", "except", "finally", "raise", "with", "yield", "lambda", "pass", "True", "False", "None", "and", "or", "not", "in", "is", "elif"]);
+    const MULTI_OPS = new Set(["==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "<<", ">>", "->", "**", "//"]);
+    const SINGLE_OPS = new Set([..."+-*/%=<>!&|^~?:@"]);
+    const DELIMS = new Set([..."(){}[];,."]);
+    function tokenize(src) { const tokens = []; let pos = 0, line = 1, col = 1; const cur = () => pos < src.length ? src[pos] : null; const peek = () => pos + 1 < src.length ? src[pos + 1] : null; const adv = () => { if (src[pos] === '\n') { line++; col = 1 } else col++; pos++ }; const add = (t, v, l, c) => tokens.push({ type: t, value: v, line: l, column: c }); while (pos < src.length) { while (cur() && (cur() === ' ' || cur() === '\t' || cur() === '\r')) adv(); const ch = cur(); if (!ch) break; if (ch === '\n') { add('NEWLINE', '\\n', line, col); adv(); continue } if (ch === '#') { const sl = line, sc = col; let d = ''; while (cur() && cur() !== '\n') { d += cur(); adv() } add('PREPROCESSOR', d, sl, sc); continue } if (ch === '/' && peek() === '/') { const sl = line, sc = col; let c = ''; while (cur() && cur() !== '\n') { c += cur(); adv() } add('COMMENT', c, sl, sc); continue } if (ch === '/' && peek() === '*') { const sl = line, sc = col; let c = '/*'; adv(); adv(); while (cur()) { if (cur() === '*' && peek() === '/') { c += '*/'; adv(); adv(); break } c += cur(); adv() } add('COMMENT', c, sl, sc); continue } if (ch >= '0' && ch <= '9') { const sl = line, sc = col; let n = '', isF = false; while (cur() && ((cur() >= '0' && cur() <= '9') || cur() === '.')) { if (cur() === '.') { if (isF) break; isF = true } n += cur(); adv() } add(isF ? 'FLOAT' : 'INTEGER', n, sl, sc); continue } if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_') { const sl = line, sc = col; let w = ''; while (cur() && /[a-zA-Z0-9_]/.test(cur())) { w += cur(); adv() } add(KEYWORDS.has(w) ? 'KEYWORD' : 'IDENTIFIER', w, sl, sc); continue } if (ch === '"' || ch === "'") { const sl = line, sc = col, q = ch; let s = q; adv(); while (cur() && cur() !== q) { if (cur() === '\\') { s += cur(); adv() } if (cur()) { s += cur(); adv() } } if (cur() === q) { s += cur(); adv() } add('STRING', s, sl, sc); continue } if (peek() && MULTI_OPS.has(ch + peek())) { add('OPERATOR', ch + peek(), line, col); adv(); adv(); continue } if (SINGLE_OPS.has(ch)) { add('OPERATOR', ch, line, col); adv(); continue } if (DELIMS.has(ch)) { add('DELIMITER', ch, line, col); adv(); continue } add('UNKNOWN', ch, line, col); adv() } return tokens }
+
+    // ═══════════════════════════════════════════════════════════
+    //  AST NODE
+    // ═══════════════════════════════════════════════════════════
+    class ASTNode { constructor(type, value = null, line = 0, column = 0) { this.type = type; this.value = value; this.line = line; this.column = column; this.children = [] } addChild(c) { if (c) this.children.push(c); return this } countNodes() { let c = 1; for (const ch of this.children) c += ch.countNodes(); return c } countByType(counts = {}) { counts[this.type] = (counts[this.type] || 0) + 1; for (const ch of this.children) ch.countByType(counts); return counts } }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PARSER (same as ICG)
+    // ═══════════════════════════════════════════════════════════
+    class Parser {
+      constructor(tokens) { this.tokens = tokens.filter(t => t.type !== 'NEWLINE' && t.type !== 'COMMENT'); this.pos = 0; this.errors = []; this.ast = new ASTNode('PROGRAM') } cur() { return this.pos < this.tokens.length ? this.tokens[this.pos] : null } adv() { const t = this.cur(); this.pos++; return t } addError(msg, token) { const t = token || this.cur(); if (t) this.errors.push({ message: msg, line: t.line, column: t.column, value: t.value }); else this.errors.push({ message: msg, line: 0, column: 0, value: 'EOF' }) } expect(type, value) { const t = this.cur(); if (!t) { this.addError(`Expected ${type}${value ? " '" + value + "'" : ''}, got EOF`); return null } if (t.type !== type || (value !== undefined && t.value !== value)) { this.addError(`Expected ${type}${value ? " '" + value + "'" : ''}, got '${t.value}'`, t); return null } return this.adv() } match(type, value) { const t = this.cur(); if (!t || t.type !== type) return false; if (value !== undefined && t.value !== value) return false; return true } matchAnyKw(kws) { const t = this.cur(); return t && t.type === 'KEYWORD' && kws.includes(t.value) }
+      parse() { while (this.cur()) { if (this.match('PREPROCESSOR')) { const t = this.cur(); this.ast.addChild(new ASTNode('PREPROCESSOR', t.value, t.line, t.column)); this.adv(); continue } const s = this.parseStatement(); if (s) this.ast.addChild(s); else { if (this.cur()) { this.addError(`Unexpected token '${this.cur().value}'`); this.adv() } } } return this.ast }
+      parseStatement() { const t = this.cur(); if (!t) return null; const cT = ["int", "float", "double", "char", "void", "long", "short", "signed", "unsigned", "auto", "static", "extern", "register", "const", "volatile"]; if (t.type === 'KEYWORD' && cT.includes(t.value)) return this.parseDeclOrFunc(); if (this.match('KEYWORD', 'return')) return this.parseReturn(); if (this.match('KEYWORD', 'if')) return this.parseIf(); if (this.match('KEYWORD', 'while')) return this.parseWhile(); if (this.match('KEYWORD', 'do')) return this.parseDoWhile(); if (this.match('KEYWORD', 'for')) return this.parseFor(); if (this.match('KEYWORD', 'switch')) return this.parseSwitch(); if (this.match('KEYWORD', 'break')) { const t = this.adv(); const n = new ASTNode('BREAK', null, t.line, t.column); if (this.match('DELIMITER', ';')) this.adv(); return n } if (this.match('KEYWORD', 'continue')) { const t = this.adv(); const n = new ASTNode('CONTINUE', null, t.line, t.column); if (this.match('DELIMITER', ';')) this.adv(); return n } if (this.match('KEYWORD', 'def')) return this.parsePyDef(); if (this.match('KEYWORD', 'class')) return this.parsePyClass(); if (this.match('KEYWORD', 'import') || this.match('KEYWORD', 'from')) return this.parsePyImport(); if (this.match('KEYWORD', 'elif')) return this.parseElif(); if (this.match('KEYWORD', 'try')) { const t = this.adv(); const n = new ASTNode('TRY', null, t.line, t.column); if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'except')) { const t = this.adv(); const n = new ASTNode('EXCEPT', null, t.line, t.column); if (this.cur() && !this.match('OPERATOR', ':')) { const e = this.parseExpr(); if (e) n.addChild(e); if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); n.addChild(new ASTNode('ALIAS', a.value, a.line, a.column)) } } } if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'finally')) { const t = this.adv(); const n = new ASTNode('FINALLY', null, t.line, t.column); if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'with')) { const t = this.adv(); const n = new ASTNode('WITH', null, t.line, t.column); const e = this.parseExpr(); if (e) n.addChild(e); if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); n.addChild(new ASTNode('ALIAS', a.value, a.line, a.column)) } } if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'raise')) { const t = this.adv(); const n = new ASTNode('RAISE', null, t.line, t.column); if (this.cur() && !this.match('DELIMITER', ';') && !this.match('OPERATOR', ':')) { const e = this.parseExpr(); if (e) n.addChild(e) } return n } if (this.match('KEYWORD', 'pass')) { const t = this.adv(); return new ASTNode('PASS', null, t.line, t.column) } if (this.match('KEYWORD', 'yield')) { const t = this.adv(); const n = new ASTNode('YIELD', null, t.line, t.column); if (this.cur() && !this.match('DELIMITER', ';')) { const e = this.parseExpr(); if (e) n.addChild(e) } return n } if (this.match('KEYWORD', 'print')) return this.parseExprStmt(); if (this.match('DELIMITER', '{')) return this.parseBlock(); if (['IDENTIFIER', 'INTEGER', 'FLOAT', 'STRING', 'DELIMITER', 'OPERATOR', 'KEYWORD'].includes(t.type)) return this.parseExprStmt(); return null }
+      parseDeclOrFunc() { const st = this.cur(); const nL = st.line, nC = st.column; let ts = ''; const cT = ["int", "float", "double", "char", "void", "long", "short", "signed", "unsigned", "auto", "static", "extern", "register", "const", "volatile"]; while (this.cur() && this.cur().type === 'KEYWORD' && cT.includes(this.cur().value)) { ts += (ts ? ' ' : '') + this.cur().value; this.adv() } while (this.match('OPERATOR', '*')) { ts += '*'; this.adv() } if (!this.match('IDENTIFIER')) { this.addError(`Expected identifier after type '${ts}'`); return new ASTNode('ERROR', ts, nL, nC) } const name = this.adv(); if (this.match('DELIMITER', '(')) return this.parseFuncDef(ts, name, nL, nC); const node = new ASTNode('VAR_DECL', ts, nL, nC); const vn = new ASTNode('VARIABLE', name.value, name.line, name.column); if (this.match('DELIMITER', '[')) { this.adv(); if (this.cur() && (this.cur().type === 'INTEGER' || this.cur().type === 'IDENTIFIER')) { vn.addChild(new ASTNode('ARRAY_SIZE', this.cur().value, this.cur().line, this.cur().column)); this.adv() } this.expect('DELIMITER', ']') } if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) { const i = new ASTNode('INITIALIZER'); i.addChild(e); vn.addChild(i) } } node.addChild(vn); while (this.match('DELIMITER', ',')) { this.adv(); if (this.match('OPERATOR', '*')) this.adv(); if (this.match('IDENTIFIER')) { const nv = this.adv(); const nn = new ASTNode('VARIABLE', nv.value, nv.line, nv.column); if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) { const i = new ASTNode('INITIALIZER'); i.addChild(e); nn.addChild(i) } } node.addChild(nn) } } this.expect('DELIMITER', ';'); return node }
+      parseFuncDef(rt, name, line, col) { const n = new ASTNode('FUNC_DEF', name.value, line, col); n.addChild(new ASTNode('RETURN_TYPE', rt, line, col)); const pn = new ASTNode('PARAMETERS'); this.expect('DELIMITER', '('); if (!this.match('DELIMITER', ')')) this.parseParamList(pn); this.expect('DELIMITER', ')'); n.addChild(pn); if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else this.expect('DELIMITER', ';'); return n }
+      parseParamList(pn) { const cT = ["int", "float", "double", "char", "void", "long", "short", "signed", "unsigned", "const"]; while (true) { const p = new ASTNode('PARAM'); let ts = ''; while (this.cur() && this.cur().type === 'KEYWORD' && cT.includes(this.cur().value)) { ts += (ts ? ' ' : '') + this.cur().value; this.adv() } while (this.match('OPERATOR', '*')) { ts += '*'; this.adv() } if (ts) p.addChild(new ASTNode('TYPE', ts)); if (this.match('IDENTIFIER')) { const nm = this.adv(); p.addChild(new ASTNode('NAME', nm.value, nm.line, nm.column)) } pn.addChild(p); if (this.match('DELIMITER', ',')) this.adv(); else break } }
+      parseBlock() { const t = this.cur(); const n = new ASTNode('BLOCK', null, t ? t.line : 0, t ? t.column : 0); this.expect('DELIMITER', '{'); while (this.cur() && !this.match('DELIMITER', '}')) { const s = this.parseStatement(); if (s) n.addChild(s); else { if (this.cur() && !this.match('DELIMITER', '}')) { this.addError('Unexpected token in block'); this.adv() } } } this.expect('DELIMITER', '}'); return n }
+      parseReturn() { const t = this.adv(); const n = new ASTNode('RETURN', null, t.line, t.column); if (!this.match('DELIMITER', ';')) { const e = this.parseExpr(); if (e) n.addChild(e) } this.expect('DELIMITER', ';'); return n }
+      parseIf() { const t = this.adv(); const n = new ASTNode('IF', null, t.line, t.column); if (this.match('DELIMITER', '(')) { this.adv(); const c = this.parseExpr(); const cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); this.expect('DELIMITER', ')') } else { const c = this.parseExpr(); const cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); if (this.match('OPERATOR', ':')) this.adv() } if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else { const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } if (this.match('KEYWORD', 'else')) { this.adv(); if (this.match('KEYWORD', 'if')) { const en = new ASTNode('ELSE_IF'); en.addChild(this.parseIf()); n.addChild(en) } else if (this.match('DELIMITER', '{')) { const en = new ASTNode('ELSE'); en.addChild(this.parseBlock()); n.addChild(en) } else { if (this.match('OPERATOR', ':')) this.adv(); const en = new ASTNode('ELSE'); const s = this.parseStatement(); if (s) en.addChild(s); n.addChild(en) } } return n }
+      parseElif() { const t = this.adv(); const n = new ASTNode('ELIF', null, t.line, t.column); const c = this.parseExpr(); const cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); if (this.match('OPERATOR', ':')) this.adv(); const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } return n }
+      parseWhile() { const t = this.adv(); const n = new ASTNode('WHILE', null, t.line, t.column); if (this.match('DELIMITER', '(')) { this.adv(); const c = this.parseExpr(); const cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); this.expect('DELIMITER', ')') } else { const c = this.parseExpr(); const cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); if (this.match('OPERATOR', ':')) this.adv() } if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else { const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } return n }
+      parseDoWhile() { const t = this.adv(); const n = new ASTNode('DO_WHILE', null, t.line, t.column); if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); this.expect('KEYWORD', 'while'); if (this.match('DELIMITER', '(')) { this.adv(); const c = this.parseExpr(); const cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); this.expect('DELIMITER', ')') } this.expect('DELIMITER', ';'); return n }
+      parseFor() { const t = this.adv(); const n = new ASTNode('FOR', null, t.line, t.column); if (this.match('DELIMITER', '(')) { this.adv(); const init = new ASTNode('INIT'); if (!this.match('DELIMITER', ';')) { const e = this.parseExprOrDecl(); if (e) init.addChild(e) } n.addChild(init); if (this.match('DELIMITER', ';')) this.adv(); const cond = new ASTNode('CONDITION'); if (!this.match('DELIMITER', ';')) { const c = this.parseExpr(); if (c) cond.addChild(c) } n.addChild(cond); if (this.match('DELIMITER', ';')) this.adv(); const upd = new ASTNode('UPDATE'); if (!this.match('DELIMITER', ')')) { const u = this.parseExpr(); if (u) upd.addChild(u) } n.addChild(upd); this.expect('DELIMITER', ')'); if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else { const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } } else { if (this.match('IDENTIFIER')) { const vt = this.adv(); n.addChild(new ASTNode('ITERATOR', vt.value, vt.line, vt.column)) } this.expect('KEYWORD', 'in'); const it = this.parseExpr(); if (it) { const itn = new ASTNode('ITERABLE'); itn.addChild(it); n.addChild(itn) } if (this.match('OPERATOR', ':')) this.adv(); const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } return n }
+      parseSwitch() { const t = this.adv(); const n = new ASTNode('SWITCH', null, t.line, t.column); this.expect('DELIMITER', '('); const e = this.parseExpr(); const en = new ASTNode('SWITCH_EXPR'); if (e) en.addChild(e); n.addChild(en); this.expect('DELIMITER', ')'); this.expect('DELIMITER', '{'); while (this.cur() && !this.match('DELIMITER', '}')) { if (this.match('KEYWORD', 'case')) { const ct = this.adv(); const cn = new ASTNode('CASE', null, ct.line, ct.column); const ce = this.parseExpr(); if (ce) cn.addChild(ce); this.expect('OPERATOR', ':'); while (this.cur() && !this.match('KEYWORD', 'case') && !this.match('KEYWORD', 'default') && !this.match('DELIMITER', '}')) { const s = this.parseStatement(); if (s) cn.addChild(s); else break } n.addChild(cn) } else if (this.match('KEYWORD', 'default')) { const dt = this.adv(); const dn = new ASTNode('DEFAULT', null, dt.line, dt.column); this.expect('OPERATOR', ':'); while (this.cur() && !this.match('DELIMITER', '}')) { const s = this.parseStatement(); if (s) dn.addChild(s); else break } n.addChild(dn) } else { this.addError("Expected 'case' or 'default'"); this.adv() } } this.expect('DELIMITER', '}'); return n }
+      parsePyDef() { const t = this.adv(); const n = new ASTNode('FUNC_DEF', null, t.line, t.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); n.value = nm.value } const pn = new ASTNode('PARAMETERS'); if (this.match('DELIMITER', '(')) { this.adv(); while (!this.match('DELIMITER', ')') && this.cur()) { if (this.match('OPERATOR', '*')) this.adv(); if (this.match('IDENTIFIER')) { const pt = this.adv(); const p = new ASTNode('PARAM', pt.value, pt.line, pt.column); if (this.match('OPERATOR', '=')) { this.adv(); const d = this.parseExpr(); if (d) { const dn = new ASTNode('DEFAULT'); dn.addChild(d); p.addChild(dn) } } pn.addChild(p) } if (this.match('DELIMITER', ',')) this.adv(); else break } this.expect('DELIMITER', ')') } n.addChild(pn); if (this.match('OPERATOR', ':')) this.adv(); return n }
+      parsePyClass() { const t = this.adv(); const n = new ASTNode('CLASS_DEF', null, t.line, t.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); n.value = nm.value } if (this.match('DELIMITER', '(')) { this.adv(); const bases = new ASTNode('BASES'); while (!this.match('DELIMITER', ')') && this.cur()) { if (this.match('IDENTIFIER')) { const b = this.adv(); bases.addChild(new ASTNode('BASE', b.value, b.line, b.column)) } if (this.match('DELIMITER', ',')) this.adv(); else break } this.expect('DELIMITER', ')'); n.addChild(bases) } if (this.match('OPERATOR', ':')) this.adv(); return n }
+      parsePyImport() { const t = this.adv(); const n = new ASTNode('IMPORT', null, t.line, t.column); if (t.value === 'from') { if (this.match('IDENTIFIER')) { const m = this.adv(); n.addChild(new ASTNode('MODULE', m.value, m.line, m.column)) } this.expect('KEYWORD', 'import'); while (this.match('IDENTIFIER')) { const imp = this.adv(); const in_ = new ASTNode('NAME', imp.value, imp.line, imp.column); if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); in_.addChild(new ASTNode('ALIAS', a.value)) } } n.addChild(in_); if (this.match('DELIMITER', ',')) this.adv(); else break } } else { while (this.match('IDENTIFIER')) { const m = this.adv(); const mn = new ASTNode('MODULE', m.value, m.line, m.column); while (this.match('DELIMITER', '.')) { this.adv(); if (this.match('IDENTIFIER')) { const s = this.adv(); mn.value += '.' + s.value } } if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); mn.addChild(new ASTNode('ALIAS', a.value)) } } n.addChild(mn); if (this.match('DELIMITER', ',')) this.adv(); else break } } return n }
+      parseExprStmt() { const e = this.parseExpr(); if (!e) return null; const n = new ASTNode('EXPR_STMT', null, e.line, e.column); n.addChild(e); if (this.match('DELIMITER', ';')) this.adv(); return n }
+      parseExprOrDecl() { const cT = ["int", "float", "double", "char", "long", "short", "signed", "unsigned"]; if (this.cur() && this.cur().type === 'KEYWORD' && cT.includes(this.cur().value)) { const tt = this.adv(); const n = new ASTNode('VAR_DECL', tt.value, tt.line, tt.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); const vn = new ASTNode('VARIABLE', nm.value, nm.line, nm.column); if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) { const i = new ASTNode('INITIALIZER'); i.addChild(e); vn.addChild(i) } } n.addChild(vn) } return n } return this.parseExpr() }
+      parseExpr() { let left = this.parseTernary(); if (!left) return null; const aOps = ['=', '+=', '-=', '*=', '/=']; if (this.cur() && this.cur().type === 'OPERATOR' && aOps.includes(this.cur().value)) { const op = this.adv(); const right = this.parseExpr(); const n = new ASTNode('ASSIGN', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); return n } return left }
+      parseTernary() { let left = this.parseLogOr(); if (left && this.match('OPERATOR', '?')) { this.adv(); const t = this.parseExpr(); this.expect('OPERATOR', ':'); const f = this.parseExpr(); const n = new ASTNode('TERNARY', '?:', left.line, left.column); n.addChild(left); if (t) n.addChild(t); if (f) n.addChild(f); return n } return left }
+      parseLogOr() { let left = this.parseLogAnd(); while (this.cur() && ['OPERATOR', 'KEYWORD'].includes(this.cur().type) && ['||', 'or'].includes(this.cur().value)) { const op = this.adv(); const right = this.parseLogAnd(); const n = new ASTNode('LOG_OR', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseLogAnd() { let left = this.parseEquality(); while (this.cur() && ['OPERATOR', 'KEYWORD'].includes(this.cur().type) && ['&&', 'and'].includes(this.cur().value)) { const op = this.adv(); const right = this.parseEquality(); const n = new ASTNode('LOG_AND', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseEquality() { let left = this.parseRelational(); while (this.cur() && this.cur().type === 'OPERATOR' && ['==', '!='].includes(this.cur().value)) { const op = this.adv(); const right = this.parseRelational(); const n = new ASTNode('EQUALITY', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseRelational() { let left = this.parseAdditive(); while (this.cur() && this.cur().type === 'OPERATOR' && ['<', '>', '<=', '>='].includes(this.cur().value)) { const op = this.adv(); const right = this.parseAdditive(); const n = new ASTNode('RELATIONAL', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } if (this.matchAnyKw(['in', 'is', 'not'])) { let ov = this.adv().value; if (ov === 'not' && this.match('KEYWORD', 'in')) { ov = 'not in'; this.adv() } else if (ov === 'is' && this.match('KEYWORD', 'not')) { ov = 'is not'; this.adv() } const right = this.parseAdditive(); const n = new ASTNode('RELATIONAL', ov, left ? left.line : 0, left ? left.column : 0); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseAdditive() { let left = this.parseMult(); while (this.cur() && this.cur().type === 'OPERATOR' && ['+', '-'].includes(this.cur().value)) { const op = this.adv(); const right = this.parseMult(); const n = new ASTNode('BIN_OP', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseMult() { let left = this.parseUnary(); while (this.cur() && this.cur().type === 'OPERATOR' && ['*', '/', '%', '//'].includes(this.cur().value)) { const op = this.adv(); const right = this.parseUnary(); const n = new ASTNode('BIN_OP', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseUnary() { if (this.cur() && this.cur().type === 'OPERATOR' && ['+', '-', '!', '~', '*', '&'].includes(this.cur().value)) { const op = this.adv(); const o = this.parseUnary(); const n = new ASTNode('UNARY', op.value, op.line, op.column); if (o) n.addChild(o); return n } if (this.match('KEYWORD', 'not')) { const op = this.adv(); const o = this.parseUnary(); const n = new ASTNode('UNARY', 'not', op.line, op.column); if (o) n.addChild(o); return n } if (this.match('KEYWORD', 'sizeof')) { const op = this.adv(); const n = new ASTNode('SIZEOF', null, op.line, op.column); if (this.match('DELIMITER', '(')) { this.adv(); const e = this.parseExpr(); if (e) n.addChild(e); this.expect('DELIMITER', ')') } return n } if (this.cur() && this.cur().type === 'OPERATOR' && ['++', '--'].includes(this.cur().value)) { const op = this.adv(); const o = this.parseUnary(); const n = new ASTNode('PREFIX', op.value, op.line, op.column); if (o) n.addChild(o); return n } return this.parsePostfix() }
+      parsePostfix() { let left = this.parsePrimary(); if (!left) return null; while (this.cur()) { if (this.match('DELIMITER', '(')) { this.adv(); const call = new ASTNode('CALL', null, left.line, left.column); call.addChild(left); const args = new ASTNode('ARGS'); if (!this.match('DELIMITER', ')')) { let a = this.parseExpr(); if (a) args.addChild(a); while (this.match('DELIMITER', ',')) { this.adv(); a = this.parseExpr(); if (a) args.addChild(a) } } call.addChild(args); this.expect('DELIMITER', ')'); left = call; continue } if (this.match('DELIMITER', '[')) { this.adv(); const acc = new ASTNode('INDEX', null, left.line, left.column); acc.addChild(left); const idx = this.parseExpr(); if (idx) acc.addChild(idx); this.expect('DELIMITER', ']'); left = acc; continue } if (this.match('DELIMITER', '.')) { this.adv(); const mem = new ASTNode('DOT', null, left.line, left.column); mem.addChild(left); if (this.match('IDENTIFIER')) { const m = this.adv(); mem.addChild(new ASTNode('MEMBER', m.value, m.line, m.column)) } left = mem; continue } if (this.match('OPERATOR', '->')) { this.adv(); const arr = new ASTNode('ARROW', null, left.line, left.column); arr.addChild(left); if (this.match('IDENTIFIER')) { const m = this.adv(); arr.addChild(new ASTNode('MEMBER', m.value, m.line, m.column)) } left = arr; continue } if (this.cur() && this.cur().type === 'OPERATOR' && ['++', '--'].includes(this.cur().value)) { const op = this.adv(); const n = new ASTNode('POSTFIX', op.value, op.line, op.column); n.addChild(left); left = n; continue } break } return left }
+      parsePrimary() { const t = this.cur(); if (!t) return null; if (t.type === 'INTEGER') { this.adv(); return new ASTNode('INT', t.value, t.line, t.column) } if (t.type === 'FLOAT') { this.adv(); return new ASTNode('FLOAT', t.value, t.line, t.column) } if (t.type === 'STRING') { this.adv(); return new ASTNode('STRING', t.value, t.line, t.column) } if (t.type === 'KEYWORD' && (t.value === 'True' || t.value === 'False')) { this.adv(); return new ASTNode('BOOL', t.value, t.line, t.column) } if (t.type === 'KEYWORD' && t.value === 'None') { this.adv(); return new ASTNode('NONE', t.value, t.line, t.column) } if (t.type === 'IDENTIFIER') { this.adv(); return new ASTNode('ID', t.value, t.line, t.column) } if (t.type === 'KEYWORD' && (t.value === 'print' || t.value === 'input')) { this.adv(); return new ASTNode('ID', t.value, t.line, t.column) } if (this.match('DELIMITER', '(')) { this.adv(); const e = this.parseExpr(); this.expect('DELIMITER', ')'); if (e) { const g = new ASTNode('GROUP', null, t.line, t.column); g.addChild(e); return g } return null } if (this.match('DELIMITER', '[')) { this.adv(); const n = new ASTNode('LIST', null, t.line, t.column); if (!this.match('DELIMITER', ']')) { let el = this.parseExpr(); if (el) n.addChild(el); while (this.match('DELIMITER', ',')) { this.adv(); if (this.match('DELIMITER', ']')) break; el = this.parseExpr(); if (el) n.addChild(el) } } this.expect('DELIMITER', ']'); return n } return null }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TAC GENERATOR (same as ICG)
+    // ═══════════════════════════════════════════════════════════
+    class TACGenerator {
+      constructor() { this.instructions = []; this.tempCount = 0; this.labelCount = 0; this.symbols = {}; this.currentScope = 'global' } newTemp() { return `t${this.tempCount++}` } newLabel() { return `L${this.labelCount++}` } emit(op, arg1 = '', arg2 = '', result = '') { this.instructions.push({ op, arg1: String(arg1), arg2: String(arg2), result: String(result) }) } emitLabel(label) { this.instructions.push({ op: 'label', arg1: '', arg2: '', result: '', label }) } emitComment(text) { this.instructions.push({ op: 'comment', arg1: '', arg2: '', result: '', comment: text }) } addSymbol(name, type) { this.symbols[name] = { type, scope: this.currentScope } }
+      generate(ast) { this.visit(ast); return { instructions: this.instructions, symbols: this.symbols, tempCount: this.tempCount, labelCount: this.labelCount } }
+      visit(node) { if (!node) return ''; switch (node.type) { case 'PROGRAM': for (const ch of node.children) this.visit(ch); return ''; case 'FUNC_DEF': { const fname = node.value || 'unknown'; const prev = this.currentScope; this.currentScope = fname; this.emitComment(`Function: ${fname}`); this.emitLabel(`func_${fname}`); this.emit('begin_func', fname); const params = node.children.find(c => c.type === 'PARAMETERS'); if (params) params.children.forEach((p, i) => { const nameNode = p.children ? p.children.find(c => c.type === 'NAME') : null; const name = nameNode ? nameNode.value : (p.value || `param${i}`); const typeNode = p.children ? p.children.find(c => c.type === 'TYPE') : null; this.emit('param', name, '', `arg${i}`); this.addSymbol(name, typeNode ? typeNode.value : 'unknown') }); const block = node.children.find(c => c.type === 'BLOCK'); if (block) for (const ch of block.children) this.visit(ch); this.emit('end_func', fname); this.currentScope = prev; return '' } case 'VAR_DECL': { const bt = node.value || 'unknown'; for (const ch of node.children) if (ch.type === 'VARIABLE') { this.addSymbol(ch.value, bt); const init = ch.children.find(c => c.type === 'INITIALIZER'); if (init && init.children[0]) { const val = this.visitExpr(init.children[0]); this.emit('=', val, '', ch.value) } else this.emit('=', '0', '', ch.value) } return '' } case 'EXPR_STMT': if (node.children[0]) this.visitExpr(node.children[0]); return ''; case 'RETURN': { if (node.children[0]) { const val = this.visitExpr(node.children[0]); this.emit('return', val) } else this.emit('return'); return '' } case 'IF': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const elseNode = node.children.find(c => c.type === 'ELSE'); const elseIfNode = node.children.find(c => c.type === 'ELSE_IF'); const lF = this.newLabel(); const lE = this.newLabel(); this.emitComment('if statement'); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lF) } if (block) for (const ch of (block.children || [])) this.visit(ch); if (elseNode || elseIfNode) this.emit('goto', '', '', lE); this.emitLabel(lF); if (elseNode) { this.emitComment('else'); for (const ch of elseNode.children) this.visit(ch) } if (elseIfNode) for (const ch of elseIfNode.children) this.visit(ch); if (elseNode || elseIfNode) this.emitLabel(lE); return '' } case 'ELIF': { const condNode = node.children.find(c => c.type === 'CONDITION'); const body = node.children.find(c => c.type === 'BODY' || c.type === 'BLOCK'); const lF = this.newLabel(); this.emitComment('elif'); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lF) } if (body) for (const ch of (body.children || [])) this.visit(ch); this.emitLabel(lF); return '' } case 'WHILE': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const lS = this.newLabel(); const lE = this.newLabel(); this.emitComment('while loop'); this.emitLabel(lS); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lE) } if (block) for (const ch of (block.children || [])) this.visit(ch); this.emit('goto', '', '', lS); this.emitLabel(lE); return '' } case 'DO_WHILE': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK'); const lS = this.newLabel(); this.emitComment('do-while loop'); this.emitLabel(lS); if (block) for (const ch of block.children) this.visit(ch); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_true', cond, '', lS) } return '' } case 'FOR': { const initNode = node.children.find(c => c.type === 'INIT'); const condNode = node.children.find(c => c.type === 'CONDITION'); const updNode = node.children.find(c => c.type === 'UPDATE'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const iterNode = node.children.find(c => c.type === 'ITERATOR'); const lS = this.newLabel(); const lE = this.newLabel(); this.emitComment('for loop'); if (initNode) for (const ch of initNode.children) { if (ch.type === 'VAR_DECL') this.visit(ch); else this.visitExpr(ch) } if (iterNode) { this.addSymbol(iterNode.value, 'int'); this.emit('=', '0', '', iterNode.value) } this.emitLabel(lS); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lE) } if (block) for (const ch of (block.children || [])) this.visit(ch); if (updNode && updNode.children[0]) this.visitExpr(updNode.children[0]); this.emit('goto', '', '', lS); this.emitLabel(lE); return '' } case 'SWITCH': { const exprNode = node.children.find(c => c.type === 'SWITCH_EXPR'); const lE = this.newLabel(); let sv = ''; this.emitComment('switch'); if (exprNode && exprNode.children[0]) sv = this.visitExpr(exprNode.children[0]); for (const ch of node.children) { if (ch.type === 'CASE') { const lN = this.newLabel(); if (ch.children[0]) { const cv = this.visitExpr(ch.children[0]); const t = this.newTemp(); this.emit('==', sv, cv, t); this.emit('if_false', t, '', lN) } for (let i = 1; i < ch.children.length; i++) { if (ch.children[i].type === 'BREAK') this.emit('goto', '', '', lE); else this.visit(ch.children[i]) } this.emitLabel(lN) } else if (ch.type === 'DEFAULT') { this.emitComment('default'); for (const dc of ch.children) { if (dc.type === 'BREAK') this.emit('goto', '', '', lE); else this.visit(dc) } } } this.emitLabel(lE); return '' } case 'BLOCK': for (const ch of node.children) this.visit(ch); return ''; default: for (const ch of node.children) this.visit(ch); return '' } }
+      visitExpr(node) { if (!node) return ''; switch (node.type) { case 'INT': case 'FLOAT': case 'BOOL': case 'NONE': return node.value; case 'STRING': return node.value; case 'ID': return node.value; case 'ASSIGN': { const left = node.children[0] ? this.visitExpr(node.children[0]) : ''; const right = node.children[1] ? this.visitExpr(node.children[1]) : ''; if (node.value === '=') this.emit('=', right, '', left); else { const op = node.value.replace('=', ''); const t = this.newTemp(); this.emit(op, left, right, t); this.emit('=', t, '', left) } return left } case 'BIN_OP': case 'LOG_AND': case 'LOG_OR': case 'EQUALITY': case 'RELATIONAL': { const left = node.children[0] ? this.visitExpr(node.children[0]) : ''; const right = node.children[1] ? this.visitExpr(node.children[1]) : ''; const t = this.newTemp(); this.emit(node.value, left, right, t); return t } case 'UNARY': { const operand = node.children[0] ? this.visitExpr(node.children[0]) : ''; const t = this.newTemp(); this.emit('unary_' + node.value, operand, '', t); return t } case 'PREFIX': { const operand = node.children[0] ? this.visitExpr(node.children[0]) : ''; const t = this.newTemp(); const op = node.value === '++' ? '+' : '-'; this.emit(op, operand, '1', t); this.emit('=', t, '', operand); return operand } case 'POSTFIX': { const operand = node.children[0] ? this.visitExpr(node.children[0]) : ''; const t = this.newTemp(); this.emit('=', operand, '', t); const op = node.value === '++' ? '+' : '-'; const t2 = this.newTemp(); this.emit(op, operand, '1', t2); this.emit('=', t2, '', operand); return t } case 'CALL': { const callee = node.children[0] ? this.visitExpr(node.children[0]) : 'unknown'; const argsNode = node.children[1]; const argVals = []; if (argsNode) for (const a of argsNode.children) argVals.push(this.visitExpr(a)); for (const av of argVals) this.emit('push_arg', av); const t = this.newTemp(); this.emit('call', callee, argVals.length, t); return t } case 'INDEX': { const arr = node.children[0] ? this.visitExpr(node.children[0]) : ''; const idx = node.children[1] ? this.visitExpr(node.children[1]) : ''; const t = this.newTemp(); this.emit('index', arr, idx, t); return t } case 'DOT': case 'ARROW': { const obj = node.children[0] ? this.visitExpr(node.children[0]) : ''; const mem = node.children[1] ? node.children[1].value : ''; const t = this.newTemp(); this.emit(node.type === 'DOT' ? '.' : '->', obj, mem, t); return t } case 'GROUP': return node.children[0] ? this.visitExpr(node.children[0]) : ''; case 'TERNARY': { const cond = node.children[0] ? this.visitExpr(node.children[0]) : ''; const lF = this.newLabel(); const lE = this.newLabel(); const t = this.newTemp(); this.emit('if_false', cond, '', lF); const tv = node.children[1] ? this.visitExpr(node.children[1]) : ''; this.emit('=', tv, '', t); this.emit('goto', '', '', lE); this.emitLabel(lF); const fv = node.children[2] ? this.visitExpr(node.children[2]) : ''; this.emit('=', fv, '', t); this.emitLabel(lE); return t } case 'LIST': { const t = this.newTemp(); this.emit('alloc_list', node.children.length, '', t); node.children.forEach((el, i) => { const v = this.visitExpr(el); this.emit('list_set', t, i, v) }); return t } default: if (node.children.length) return this.visitExpr(node.children[0]); return node.value || '' } }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CODE OPTIMIZER
+    // ══════════════════════════════════════════════════   ════════
+    class CodeOptimizer {
+      constructor(instructions) {
+        this.original = instructions.map(i => ({ ...i }));
+        this.instructions = instructions.map(i => ({ ...i }));
+        this.optimizations = [];
+        this.counts = { fold: 0, prop: 0, dead: 0, strength: 0, subexpr: 0, algebraic: 0 };
+      }
+
+      isNum(v) { return /^-?\d+(\.\d+)?$/.test(v); }
+      toNum(v) { return parseFloat(v); }
+
+      optimize() {
+        let changed = true;
+        let passes = 0;
+        while (changed && passes < 10) {
+          changed = false;
+          passes++;
+          if (this.constantFolding()) changed = true;
+          if (this.constantPropagation()) changed = true;
+          if (this.algebraicSimplification()) changed = true;
+          if (this.strengthReduction()) changed = true;
+          if (this.commonSubexprElim()) changed = true;
+        }
+        this.deadCodeElimination();
+        return { optimized: this.instructions, optimizations: this.optimizations, counts: this.counts, passes };
+      }
+
+      constantFolding() {
+        let changed = false;
+        for (let i = 0; i < this.instructions.length; i++) {
+          const inst = this.instructions[i];
+          if (inst.op === 'label' || inst.op === 'comment' || inst._removed) continue;
+          const ops = ['+', '-', '*', '/', '%', '==', '!=', '<', '>', '<=', '>=', '&&', '||'];
+          if (ops.includes(inst.op) && this.isNum(inst.arg1) && this.isNum(inst.arg2)) {
+            const a = this.toNum(inst.arg1), b = this.toNum(inst.arg2);
+            let result;
+            switch (inst.op) {
+              case '+': result = a + b; break; case '-': result = a - b; break; case '*': result = a * b; break;
+              case '/': result = b !== 0 ? a / b : 0; break; case '%': result = b !== 0 ? a % b : 0; break;
+              case '==': result = a === b ? 1 : 0; break; case '!=': result = a !== b ? 1 : 0; break;
+              case '<': result = a < b ? 1 : 0; break; case '>': result = a > b ? 1 : 0; break;
+              case '<=': result = a <= b ? 1 : 0; break; case '>=': result = a >= b ? 1 : 0; break;
+              case '&&': result = (a && b) ? 1 : 0; break; case '||': result = (a || b) ? 1 : 0; break;
+              default: continue;
+            }
+            const res = Number.isInteger(result) ? String(result) : result.toFixed(6).replace(/\.?0+$/, '');
+            this.optimizations.push({ type: 'fold', desc: `Folded ${inst.arg1} ${inst.op} ${inst.arg2} → ${res}`, target: inst.result });
+            inst.op = '='; inst.arg1 = res; inst.arg2 = '';
+            this.counts.fold++; changed = true;
+          }
+        }
+        return changed;
+      }
+
+      constantPropagation() {
+        let changed = false;
+        const constants = {};
+        for (let i = 0; i < this.instructions.length; i++) {
+          const inst = this.instructions[i];
+          if (inst.op === 'label' || inst.op === 'comment' || inst._removed) continue;
+          if (inst.op === '=' && this.isNum(inst.arg1) && !inst.arg2) {
+            constants[inst.result] = inst.arg1;
+          } else {
+            if (constants[inst.arg1] && inst.op !== '=') { inst.arg1 = constants[inst.arg1]; changed = true; this.counts.prop++; this.optimizations.push({ type: 'prop', desc: `Propagated constant ${inst.arg1} into arg1`, target: inst.result || '' }); }
+            if (constants[inst.arg2]) { inst.arg2 = constants[inst.arg2]; changed = true; this.counts.prop++; this.optimizations.push({ type: 'prop', desc: `Propagated constant ${inst.arg2} into arg2`, target: inst.result || '' }); }
+            if (['+', '-', '*', '/', '%', '==', '!=', '<', '>', '<=', '>=', '&&', '||'].includes(inst.op) || inst.op.startsWith('unary_')) {
+              delete constants[inst.result];
+            }
+            if (inst.op === '=' && !this.isNum(inst.arg1)) {
+              if (constants[inst.arg1]) { inst.arg1 = constants[inst.arg1]; constants[inst.result] = inst.arg1; changed = true; this.counts.prop++; this.optimizations.push({ type: 'prop', desc: `Propagated ${inst.arg1} to ${inst.result}`, target: inst.result }); }
+              else delete constants[inst.result];
+            }
+          }
+        }
+        return changed;
+      }
+
+      algebraicSimplification() {
+        let changed = false;
+        for (let i = 0; i < this.instructions.length; i++) {
+          const inst = this.instructions[i];
+          if (inst._removed) continue;
+          // x + 0 = x, 0 + x = x
+          if (inst.op === '+') {
+            if (inst.arg2 === '0') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := ${inst.arg1} + 0 → ${inst.arg1}`, target: inst.result }); inst.op = '='; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+            if (inst.arg1 === '0') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := 0 + ${inst.arg2} → ${inst.arg2}`, target: inst.result }); inst.op = '='; inst.arg1 = inst.arg2; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+          }
+          // x - 0 = x
+          if (inst.op === '-' && inst.arg2 === '0') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := ${inst.arg1} - 0 → ${inst.arg1}`, target: inst.result }); inst.op = '='; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+          // x * 1 = x, 1 * x = x
+          if (inst.op === '*') {
+            if (inst.arg2 === '1') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := ${inst.arg1} * 1 → ${inst.arg1}`, target: inst.result }); inst.op = '='; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+            if (inst.arg1 === '1') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := 1 * ${inst.arg2} → ${inst.arg2}`, target: inst.result }); inst.op = '='; inst.arg1 = inst.arg2; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+            // x * 0 = 0
+            if (inst.arg2 === '0' || inst.arg1 === '0') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := ... * 0 → 0`, target: inst.result }); inst.op = '='; inst.arg1 = '0'; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+          }
+          // x / 1 = x
+          if (inst.op === '/' && inst.arg2 === '1') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := ${inst.arg1} / 1 → ${inst.arg1}`, target: inst.result }); inst.op = '='; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+          // x - x = 0
+          if (inst.op === '-' && inst.arg1 === inst.arg2 && inst.arg1 !== '') { this.optimizations.push({ type: 'algebraic', desc: `Simplified ${inst.result} := ${inst.arg1} - ${inst.arg1} → 0`, target: inst.result }); inst.op = '='; inst.arg1 = '0'; inst.arg2 = ''; this.counts.algebraic++; changed = true; continue; }
+        }
+        return changed;
+      }
+
+      strengthReduction() {
+        let changed = false;
+        for (let i = 0; i < this.instructions.length; i++) {
+          const inst = this.instructions[i];
+          if (inst._removed) continue;
+          // x * 2 → x + x (or x << 1 for powers of 2)
+          if (inst.op === '*' && this.isNum(inst.arg2)) {
+            const n = this.toNum(inst.arg2);
+            if (n > 0 && (n & (n - 1)) === 0 && n >= 2) {
+              const shift = Math.log2(n);
+              this.optimizations.push({ type: 'strength', desc: `Strength reduction: ${inst.arg1} * ${n} → ${inst.arg1} << ${shift}`, target: inst.result });
+              inst.op = '<<'; inst.arg2 = String(shift);
+              this.counts.strength++; changed = true; continue;
+            }
+          }
+          if (inst.op === '*' && this.isNum(inst.arg1)) {
+            const n = this.toNum(inst.arg1);
+            if (n > 0 && (n & (n - 1)) === 0 && n >= 2) {
+              const shift = Math.log2(n);
+              this.optimizations.push({ type: 'strength', desc: `Strength reduction: ${n} * ${inst.arg2} → ${inst.arg2} << ${shift}`, target: inst.result });
+              inst.op = '<<'; inst.arg1 = inst.arg2; inst.arg2 = String(shift);
+              this.counts.strength++; changed = true; continue;
+            }
+          }
+          // x / 2^n → x >> n
+          if (inst.op === '/' && this.isNum(inst.arg2)) {
+            const n = this.toNum(inst.arg2);
+            if (n > 0 && (n & (n - 1)) === 0 && n >= 2) {
+              const shift = Math.log2(n);
+              this.optimizations.push({ type: 'strength', desc: `Strength reduction: ${inst.arg1} / ${n} → ${inst.arg1} >> ${shift}`, target: inst.result });
+              inst.op = '>>'; inst.arg2 = String(shift);
+              this.counts.strength++; changed = true; continue;
+            }
+          }
+        }
+        return changed;
+      }
+
+      commonSubexprElim() {
+        let changed = false;
+        const exprs = {}; // key: "op|arg1|arg2" → result temp
+        for (let i = 0; i < this.instructions.length; i++) {
+          const inst = this.instructions[i];
+          if (inst.op === 'label' || inst.op === 'comment' || inst._removed || inst.op === '=') continue;
+          if (inst.op === 'if_false' || inst.op === 'if_true' || inst.op === 'goto' || inst.op === 'return' ||
+            inst.op === 'call' || inst.op === 'push_arg' || inst.op === 'param' ||
+            inst.op === 'begin_func' || inst.op === 'end_func') continue;
+          const key = `${inst.op}|${inst.arg1}|${inst.arg2}`;
+          if (exprs[key]) {
+            this.optimizations.push({ type: 'subexpr', desc: `CSE: reused ${exprs[key]} for ${inst.arg1} ${inst.op} ${inst.arg2}`, target: inst.result });
+            inst.op = '='; inst.arg1 = exprs[key]; inst.arg2 = '';
+            this.counts.subexpr++; changed = true;
+          } else {
+            exprs[key] = inst.result;
+          }
+        }
+        return changed;
+      }
+
+      deadCodeElimination() {
+        const real = this.instructions.filter(i => i.op !== 'label' && i.op !== 'comment' && !i._removed);
+        const used = new Set();
+        // Collect all used variables (appearing as arg1 or arg2)
+        for (const inst of real) {
+          if (inst.arg1 && !this.isNum(inst.arg1) && !inst.arg1.startsWith('"') && !inst.arg1.startsWith("'")) used.add(inst.arg1);
+          if (inst.arg2 && !this.isNum(inst.arg2) && !inst.arg2.startsWith('"') && !inst.arg2.startsWith("'")) used.add(inst.arg2);
+        }
+        // Also mark results of side-effecting ops as used
+        for (const inst of real) {
+          if (['call', 'push_arg', 'return', 'if_false', 'if_true', 'goto', 'begin_func', 'end_func', 'param'].includes(inst.op)) {
+            if (inst.result) used.add(inst.result);
+          }
+        }
+        // Remove assignments to temps that are never used
+        for (let i = 0; i < this.instructions.length; i++) {
+          const inst = this.instructions[i];
+          if (inst.op === 'label' || inst.op === 'comment' || inst._removed) continue;
+          if (inst.op === '=' && inst.result && inst.result.match(/^t\d+$/) && !used.has(inst.result)) {
+            this.optimizations.push({ type: 'dead', desc: `Eliminated dead code: ${inst.result} := ${inst.arg1}`, target: inst.result });
+            inst._removed = true; this.counts.dead++;
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  RENDERING HELPERS
+    // ═══════════════════════════════════════════════════════════
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+    function renderTokens(tokens) { const tbody = document.getElementById('token-tbody'); const summary = document.getElementById('token-summary'); tbody.innerHTML = ''; summary.innerHTML = ''; if (!tokens.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No tokens.</td></tr>'; return } const counts = {}; const filtered = tokens.filter(t => t.type !== 'NEWLINE' && t.type !== 'COMMENT'); filtered.forEach(t => counts[t.type] = (counts[t.type] || 0) + 1); Object.entries(counts).sort().forEach(([type, cnt]) => { const s = document.createElement('span'); s.className = 'badge ' + type; s.textContent = `${type}: ${cnt}`; summary.appendChild(s) }); filtered.forEach((t, i) => { const tr = document.createElement('tr'); tr.innerHTML = `<td style="color:var(--muted)">${i + 1}</td><td><span class="badge ${t.type}" style="font-size:11px">${esc(t.type)}</span></td><td class="val">${esc(t.value)}</td><td>${t.line}</td><td>${t.column}</td>`; tbody.appendChild(tr) }) }
+
+    function renderAST(node, container) { container.innerHTML = ''; function buildInto(node, indent, isLast, prefix, parent) { const div = document.createElement('div'); div.className = 'ast-node'; let connector = indent === 0 ? '' : (isLast ? '└── ' : '├── '); let newPrefix = indent === 0 ? '' : (prefix + (isLast ? '    ' : '│   ')); const val = node.value ? ` : <span class="ast-value">${esc(String(node.value))}</span>` : ''; const loc = node.line > 0 ? `  <span class="ast-loc">[Ln ${node.line} Col ${node.column}]</span>` : ''; const hasChildren = node.children.length > 0; const arrow = hasChildren ? '<span class="ast-arrow" style="color:#555;margin-right:2px">▼</span>' : ''; div.innerHTML = `<span class="ast-connector">${esc(prefix)}${esc(connector)}</span>${arrow}<span class="ast-type">${esc(node.type)}</span>${val}${loc}`; parent.appendChild(div); if (hasChildren) { div.classList.add('ast-toggle'); const cc = document.createElement('div'); parent.appendChild(cc); node.children.forEach((child, i) => buildInto(child, indent + 1, i === node.children.length - 1, newPrefix, cc)); div.addEventListener('click', function (e) { e.stopPropagation(); const a = this.querySelector('.ast-arrow'); const next = this.nextElementSibling; if (next.style.display === 'none') { next.style.display = ''; if (a) a.textContent = '▼' } else { next.style.display = 'none'; if (a) a.textContent = '▶' } }) } } buildInto(node, 0, true, '', container) }
+
+    function renderTACInto(instructions, container, summaryEl, highlights = {}) {
+      container.innerHTML = ''; if (summaryEl) summaryEl.innerHTML = '';
+      const instr = instructions.filter(i => !i._removed);
+      if (!instr.length) { container.innerHTML = '<div class="empty" style="padding:40px">No instructions.</div>'; return }
+      const realInstr = instr.filter(i => i.op !== 'label' && i.op !== 'comment');
+      if (summaryEl) summaryEl.innerHTML = `<span class="badge success">Instructions: ${realInstr.length}</span>`;
+      let lineNo = 1;
+      instr.forEach(inst => {
+        const div = document.createElement('div'); div.className = 'tac-line';
+        if (highlights.optimized && highlights.optimized.has(inst)) div.classList.add('optimized');
+        if (highlights.newLine && highlights.newLine.has(inst)) div.classList.add('new-line');
+        if (inst.op === 'label') div.innerHTML = `<span class="tac-lineno"></span><span class="tac-label">${esc(inst.label)}:</span>`;
+        else if (inst.op === 'comment') div.innerHTML = `<span class="tac-lineno"></span><span class="tac-comment">// ${esc(inst.comment)}</span>`;
+        else if (inst.op === '=') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'if_false') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">if_false</span> <span class="tac-var">${esc(inst.arg1)}</span> <span class="tac-jump">goto</span> <span class="tac-label">${esc(inst.result)}</span>`;
+        else if (inst.op === 'if_true') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">if_true</span> <span class="tac-var">${esc(inst.arg1)}</span> <span class="tac-jump">goto</span> <span class="tac-label">${esc(inst.result)}</span>`;
+        else if (inst.op === 'goto') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">goto</span> <span class="tac-label">${esc(inst.result)}</span>`;
+        else if (inst.op === 'return') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">return</span>${inst.arg1 ? ' <span class="tac-var">' + esc(inst.arg1) + '</span>' : ''}`;
+        else if (inst.op === 'call') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-func">call</span> <span class="tac-var">${esc(inst.arg1)}</span>, <span class="tac-lit">${esc(inst.arg2)}</span>`;
+        else if (inst.op === 'push_arg') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">push_arg</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'param') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">param</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'begin_func') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">begin_func</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'end_func') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">end_func</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.arg2) div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-var">${esc(inst.arg1)}</span> <span class="tac-op">${esc(inst.op)}</span> <span class="tac-var">${esc(inst.arg2)}</span>`;
+        else div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-op">${esc(inst.op)}</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    function renderOptimizations(opts, counts) {
+      const container = document.getElementById('opts-list');
+      const summary = document.getElementById('opts-summary');
+      container.innerHTML = ''; summary.innerHTML = '';
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      if (!total) { container.innerHTML = '<div class="empty" style="color:var(--green)">✓ No optimizations needed — code is already optimal!</div>'; summary.innerHTML = '<span class="badge success">0 Optimizations</span>'; return; }
+      if (counts.fold) summary.innerHTML += `<span class="badge" style="color:#6ee7b7;background:rgba(110,231,183,.08)">Fold: ${counts.fold}</span>`;
+      if (counts.prop) summary.innerHTML += `<span class="badge info">Propagate: ${counts.prop}</span>`;
+      if (counts.algebraic) summary.innerHTML += `<span class="badge" style="color:#fb923c;background:rgba(251,146,0,.08)">Algebraic: ${counts.algebraic}</span>`;
+      if (counts.strength) summary.innerHTML += `<span class="badge warning">Strength: ${counts.strength}</span>`;
+      if (counts.subexpr) summary.innerHTML += `<span class="badge purple">CSE: ${counts.subexpr}</span>`;
+      if (counts.dead) summary.innerHTML += `<span class="badge error">Dead Code: ${counts.dead}</span>`;
+      const icons = { fold: '🔢', prop: '📤', dead: '💀', strength: '💪', subexpr: '🔁', algebraic: '🧮' };
+      const names = { fold: 'Constant Folding', prop: 'Constant Propagation', dead: 'Dead Code Elimination', strength: 'Strength Reduction', subexpr: 'Common Sub-expression Elimination', algebraic: 'Algebraic Simplification' };
+      opts.forEach(opt => {
+        const card = document.createElement('div'); card.className = 'opt-card';
+        card.innerHTML = `<div class="opt-header"><span class="opt-icon">${icons[opt.type] || '⚡'}</span><span class="opt-tag ${opt.type}">${names[opt.type] || opt.type}</span></div><div class="opt-detail">${esc(opt.desc)}</div>`;
+        container.appendChild(card);
+      });
+    }
+
+    function renderErrors(errors) { const panel = document.getElementById('errors-panel'); if (!errors.length) { panel.classList.add('hidden'); return } panel.classList.remove('hidden'); panel.innerHTML = `<div style="color:#e50914;font-weight:700;margin-bottom:8px;font-size:13px">⚠ ${errors.length} Parse Error${errors.length > 1 ? 's' : ''}</div>`; errors.forEach(e => { const d = document.createElement('div'); d.className = 'error-item'; d.textContent = `[Ln ${e.line} Col ${e.column}] ${e.message}${e.value ? " near '" + e.value + "'" : ''}`; panel.appendChild(d) }) }
+
+    function renderSummary(ast, parseErrors, origCount, optCount, optResult, tokenCount) {
+      const stats = document.getElementById('summary-stats');
+      const tbody = document.getElementById('opt-breakdown-tbody');
+      const totalNodes = ast.countNodes();
+      const saved = origCount - optCount;
+      const pct = origCount > 0 ? ((saved / origCount) * 100).toFixed(1) : '0';
+      const totalOpts = Object.values(optResult.counts).reduce((a, b) => a + b, 0);
+      stats.innerHTML = `
+    <div class="stat-card"><div class="stat-value ${parseErrors.length ? '' : 'ok'}">${parseErrors.length ? 'ERR' : 'OK'}</div><div class="stat-label">Parse</div></div>
+    <div class="stat-card"><div class="stat-value">${tokenCount}</div><div class="stat-label">Tokens</div></div>
+    <div class="stat-card"><div class="stat-value">${origCount}</div><div class="stat-label">Original TAC</div></div>
+    <div class="stat-card"><div class="stat-value ok">${optCount}</div><div class="stat-label">Optimized TAC</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--green)">${saved} (${pct}%)</div><div class="stat-label">Reduced</div></div>
+    <div class="stat-card"><div class="stat-value blue">${totalOpts}</div><div class="stat-label">Optimizations</div></div>
+    <div class="stat-card"><div class="stat-value">${optResult.passes}</div><div class="stat-label">Passes</div></div>`;
+      tbody.innerHTML = '';
+      const names = { fold: 'Constant Folding', prop: 'Constant Propagation', dead: 'Dead Code Elimination', strength: 'Strength Reduction', subexpr: 'CSE', algebraic: 'Algebraic Simplification' };
+      Object.entries(optResult.counts).sort().forEach(([type, cnt]) => { if (cnt > 0) { const tr = document.createElement('tr'); tr.innerHTML = `<td class="val">${esc(names[type] || type)}</td><td>${cnt}</td>`; tbody.appendChild(tr) } });
+      if (!Object.values(optResult.counts).some(v => v > 0)) tbody.innerHTML = '<tr><td colspan="2" class="empty">No optimizations applied.</td></tr>';
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TABS
+    // ═══════════════════════════════════════════════════════════
+    document.querySelectorAll('.tab').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); const target = tab.dataset.tab;['tokens', 'ast', 'original', 'optimized', 'opts', 'compare', 'summary'].forEach(p => { document.getElementById('panel-' + p).classList.toggle('hidden', p !== target) }) }) });
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('run').addEventListener('click', () => {
+      const code = document.getElementById('code').value; const status = document.getElementById('status'); status.textContent = 'Optimizing…';
+      try {
+        const tokens = tokenize(code); const parser = new Parser(tokens); const ast = parser.parse();
+        const filtered = tokens.filter(t => t.type !== 'NEWLINE' && t.type !== 'COMMENT');
+        const gen = new TACGenerator(); const tacResult = gen.generate(ast);
+        const origInstr = tacResult.instructions; const origReal = origInstr.filter(i => i.op !== 'label' && i.op !== 'comment');
+        const optimizer = new CodeOptimizer(origInstr); const optResult = optimizer.optimize();
+        const optReal = optResult.optimized.filter(i => i.op !== 'label' && i.op !== 'comment' && !i._removed);
+        renderTokens(tokens); renderErrors(parser.errors);
+        renderAST(ast, document.getElementById('ast-container'));
+        renderTACInto(optimizer.original, document.getElementById('orig-container'), document.getElementById('orig-summary'));
+        renderTACInto(optResult.optimized, document.getElementById('opt-container'), document.getElementById('opt-tac-summary'));
+        renderOptimizations(optResult.optimizations, optResult.counts);
+        // Compare
+        renderTACInto(optimizer.original, document.getElementById('compare-before'), null);
+        renderTACInto(optResult.optimized, document.getElementById('compare-after'), null);
+        const cs = document.getElementById('compare-stats'); const saved = origReal.length - optReal.length; const pct = origReal.length > 0 ? ((saved / origReal.length) * 100).toFixed(1) : '0';
+        cs.innerHTML = `<div class="stat-card"><div class="stat-value">${origReal.length}</div><div class="stat-label">Before</div></div><div class="stat-card"><div class="stat-value ok">${optReal.length}</div><div class="stat-label">After</div></div><div class="stat-card"><div class="stat-value" style="color:var(--green)">-${saved} (${pct}%)</div><div class="stat-label">Saved</div></div>`;
+        renderSummary(ast, parser.errors, origReal.length, optReal.length, optResult, filtered.length);
+        status.textContent = `Done — ${origReal.length} → ${optReal.length} instructions (${saved} eliminated, ${Object.values(optResult.counts).reduce((a, b) => a + b, 0)} optimizations)`;
+      } catch (e) { status.textContent = 'Error: ' + e.message; console.error(e) }
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      document.getElementById('code').value = ''; document.getElementById('status').textContent = 'Ready';
+      document.getElementById('token-summary').innerHTML = ''; document.getElementById('token-tbody').innerHTML = '<tr><td colspan="5" class="empty">Click <strong>▶ Optimize</strong> to begin.</td></tr>';
+      document.getElementById('ast-container').innerHTML = '<div class="empty">Click <strong>▶ Optimize</strong> to build AST.</div>';
+      document.getElementById('orig-summary').innerHTML = ''; document.getElementById('orig-container').innerHTML = '<div class="empty" style="padding:40px">Click <strong>▶ Optimize</strong> to produce TAC.</div>';
+      document.getElementById('opt-tac-summary').innerHTML = ''; document.getElementById('opt-container').innerHTML = '<div class="empty" style="padding:40px">Click <strong>▶ Optimize</strong> to see optimized TAC.</div>';
+      document.getElementById('opts-summary').innerHTML = ''; document.getElementById('opts-list').innerHTML = '<div class="empty">Click <strong>▶ Optimize</strong> to see applied optimizations.</div>';
+      document.getElementById('compare-before').innerHTML = '<div class="empty" style="padding:30px">—</div>'; document.getElementById('compare-after').innerHTML = '<div class="empty" style="padding:30px">—</div>'; document.getElementById('compare-stats').innerHTML = '';
+      document.getElementById('summary-stats').innerHTML = ''; document.getElementById('opt-breakdown-tbody').innerHTML = '<tr><td colspan="2" class="empty">No data yet.</td></tr>';
+      document.getElementById('errors-panel').classList.add('hidden');
+    });
+
+    document.getElementById('demo-c').addEventListener('click', () => {
+      document.getElementById('code').value = `#include <stdio.h>
+
+int main() {
+    // Constant folding candidates
+    int a = 2 + 3;
+    int b = 10 * 4;
+    int c = 100 / 5;
+
+    // Algebraic simplification candidates
+    int d = a + 0;
+    int e = b * 1;
+    int f = c - 0;
+    int g = a * 0;
+    int h = b / 1;
+    int k = a - a;
+
+    // Constant propagation
+    int x = 5;
+    int y = x + 10;
+    int z = x * y;
+
+    // Strength reduction (multiply by power of 2)
+    int p = z * 4;
+    int q = z * 8;
+    int r = z * 16;
+    int s = z / 2;
+
+    // Common sub-expression elimination
+    int m = a + b;
+    int n = a + b;
+
+    // Dead code (unused temp results)
+    int unused1 = 42;
+    int unused2 = 99;
+
+    // Control flow
+    if (x < y) {
+        z = z + 1;
+    } else {
+        z = z - 1;
+    }
+
+    while (z > 0) {
+        z = z - 1;
+    }
+
+    for (int i = 0; i < 10; i++) {
+        z = z + i;
+    }
+
+    return z;
+}`;
+      document.getElementById('run').click();
+    });
+
+    document.getElementById('demo-py').addEventListener('click', () => {
+      document.getElementById('code').value = `# Python optimizer demo
+
+def compute():
+    # Constant folding
+    a = 3 + 7
+    b = 10 * 5
+    c = 100 - 20
+
+    # Algebraic simplifications
+    d = a + 0
+    e = b * 1
+    f = c * 0
+    g = a - 0
+    h = a - a
+
+    # Constant propagation
+    x = 10
+    y = x + 5
+    z = x * 2
+
+    # Strength reduction
+    p = z * 4
+    q = z * 16
+    r = z / 8
+
+    # Common sub-expressions
+    m = x + y
+    n = x + y
+
+    # Dead code
+    unused = 999
+
+    # Control flow
+    if x < y:
+        z = z + 1
+    elif x == y:
+        z = z * 2
+    else:
+        z = 0
+
+    for i in range(10):
+        z = z + i
+
+    while z > 50:
+        z = z - x
+
+    result = z + a + b
+    print(result)`;
+      document.getElementById('run').click();
+    });
+  </script>
+</body>
+
+</html>

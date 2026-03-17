@@ -1,0 +1,2082 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Complete Compiler — Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+    :root {
+      --bg: #141414;
+      --card: #1f1f1f;
+      --card2: #2a2a2a;
+      --border: #333;
+      --red: #e50914;
+      --red2: #b20710;
+      --red-glow: rgba(229, 9, 20, .35);
+      --text: #e5e5e5;
+      --muted: #808080;
+      --white: #fff;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --blue: #38bdf8;
+      --purple: #c084fc;
+      --shadow: 0 8px 32px rgba(0, 0, 0, .6);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh
+    }
+
+    .topbar {
+      background: linear-gradient(180deg, rgba(0, 0, 0, .85) 0%, transparent 100%);
+      padding: 14px 30px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 100
+    }
+
+    .nf-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--red);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 8px rgba(229, 9, 20, .4)
+    }
+
+    .nf-nav {
+      display: flex;
+      gap: 16px;
+      margin-left: 12px
+    }
+
+    .nf-nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color .2s
+    }
+
+    .nf-nav a:hover,
+    .nf-nav a.active {
+      color: var(--white)
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(229, 9, 20, .12) 0%, transparent 60%), linear-gradient(to bottom, transparent 60%, var(--bg) 100%), var(--bg);
+      padding: 40px 30px 30px
+    }
+
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 42px;
+      letter-spacing: 2px;
+      color: var(--white);
+      margin-bottom: 8px
+    }
+
+    .hero .tagline {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 900px;
+      line-height: 1.5
+    }
+
+    .hero .tagline strong {
+      color: var(--red)
+    }
+
+    .page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px 40px
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: var(--red);
+      border-radius: 2px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px
+    }
+
+    @media(min-width:960px) {
+      .grid {
+        grid-template-columns: 1.05fr .95fr
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      transition: border-color .2s
+    }
+
+    .card:hover {
+      border-color: #555
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 12px
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      padding: 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0a0a0a;
+      color: #e2e8f0;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      resize: vertical;
+      outline: none;
+      tab-size: 4
+    }
+
+    textarea:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px var(--red-glow)
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 14px;
+      flex-wrap: wrap
+    }
+
+    .btn-red {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px var(--red-glow);
+      transition: all .2s;
+      letter-spacing: .3px
+    }
+
+    .btn-red:hover {
+      background: #f40612;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px var(--red-glow)
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all .2s
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, .14);
+      color: var(--white);
+      border-color: #666
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 16px;
+      flex-wrap: wrap
+    }
+
+    .pipe-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap
+    }
+
+    .pipe-step:hover {
+      border-color: #666;
+      color: var(--white)
+    }
+
+    .pipe-step.active {
+      background: var(--red);
+      color: var(--white);
+      border-color: var(--red);
+      box-shadow: 0 2px 12px var(--red-glow)
+    }
+
+    .pipe-step.done {
+      border-color: var(--green);
+      color: var(--green)
+    }
+
+    .pipe-step.done .pipe-icon {
+      color: var(--green)
+    }
+
+    .pipe-step.err {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    .pipe-arrow {
+      color: #444;
+      font-size: 14px
+    }
+
+    .pipe-icon {
+      font-size: 12px
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      background: var(--card2);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-wrap: wrap
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      transition: all .2s;
+      min-width: 0
+    }
+
+    .tab:not(:last-child) {
+      border-right: 1px solid var(--border)
+    }
+
+    .tab:hover {
+      color: var(--white);
+      background: rgba(255, 255, 255, .04)
+    }
+
+    .tab.active {
+      background: var(--red);
+      color: var(--white)
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    .badge.KEYWORD {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, .08)
+    }
+
+    .badge.IDENTIFIER {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, .08)
+    }
+
+    .badge.INTEGER,
+    .badge.FLOAT {
+      color: #6ee7b7;
+      background: rgba(110, 231, 183, .06)
+    }
+
+    .badge.STRING {
+      color: #fb923c;
+      background: rgba(251, 146, 0, .06)
+    }
+
+    .badge.OPERATOR {
+      color: #a5b4fc;
+      background: rgba(165, 180, 252, .06)
+    }
+
+    .badge.DELIMITER {
+      color: #f472b6;
+      background: rgba(244, 114, 182, .06)
+    }
+
+    .badge.COMMENT {
+      color: #94a3b8;
+      background: rgba(148, 163, 184, .06)
+    }
+
+    .badge.PREPROCESSOR {
+      color: #c084fc;
+      background: rgba(192, 132, 252, .06)
+    }
+
+    .badge.UNKNOWN {
+      color: #f87171;
+      background: rgba(239, 68, 68, .06)
+    }
+
+    .badge.success {
+      color: #22c55e;
+      background: rgba(34, 197, 94, .1)
+    }
+
+    .badge.info {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, .1)
+    }
+
+    .badge.warning {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, .1)
+    }
+
+    .badge.error {
+      color: #e50914;
+      background: rgba(229, 9, 20, .1)
+    }
+
+    .table-wrap {
+      max-height: 500px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #181818;
+      z-index: 1
+    }
+
+    th,
+    td {
+      padding: 8px 10px;
+      font-size: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border)
+    }
+
+    th {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: .5px;
+      font-size: 10px
+    }
+
+    td.val {
+      font-family: "JetBrains Mono", monospace;
+      color: #cbd5e1
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 12px;
+      font-size: 14px
+    }
+
+    .ast-wrap {
+      max-height: 500px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0a0a0a;
+      padding: 16px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px
+    }
+
+    .ast-node {
+      line-height: 1.7;
+      white-space: nowrap
+    }
+
+    .ast-connector {
+      color: #555
+    }
+
+    .ast-type {
+      color: var(--red);
+      font-weight: 700
+    }
+
+    .ast-value {
+      color: #fbbf24
+    }
+
+    .ast-loc {
+      color: #555;
+      font-size: 11px
+    }
+
+    .ast-toggle {
+      cursor: pointer;
+      user-select: none
+    }
+
+    .ast-toggle:hover .ast-type {
+      text-decoration: underline
+    }
+
+    .tac-wrap {
+      max-height: 500px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0a0a0a;
+      padding: 0
+    }
+
+    .tac-line {
+      display: flex;
+      align-items: baseline;
+      padding: 3px 14px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(51, 51, 51, .4);
+      transition: background .15s
+    }
+
+    .tac-line:hover {
+      background: rgba(229, 9, 20, .04)
+    }
+
+    .tac-lineno {
+      color: #555;
+      min-width: 32px;
+      text-align: right;
+      margin-right: 14px;
+      font-size: 10px;
+      user-select: none
+    }
+
+    .tac-label {
+      color: #c084fc;
+      font-weight: 700
+    }
+
+    .tac-op {
+      color: var(--red);
+      font-weight: 700
+    }
+
+    .tac-var {
+      color: #38bdf8
+    }
+
+    .tac-lit {
+      color: #6ee7b7
+    }
+
+    .tac-assign {
+      color: #f59e0b
+    }
+
+    .tac-jump {
+      color: #fb923c;
+      font-weight: 700
+    }
+
+    .tac-comment {
+      color: #555;
+      font-style: italic
+    }
+
+    .tac-func {
+      color: #22d3ee;
+      font-weight: 700
+    }
+
+    .tac-removed {
+      opacity: .35;
+      text-decoration: line-through
+    }
+
+    .asm-wrap {
+      max-height: 500px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0a0a0a;
+      padding: 0
+    }
+
+    .asm-line {
+      display: flex;
+      align-items: baseline;
+      padding: 3px 14px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(51, 51, 51, .3);
+      transition: background .15s
+    }
+
+    .asm-line:hover {
+      background: rgba(229, 9, 20, .04)
+    }
+
+    .asm-line.section-line {
+      background: rgba(192, 132, 252, .04);
+      border-left: 3px solid #c084fc
+    }
+
+    .asm-line.label-line {
+      background: rgba(251, 191, 36, .03)
+    }
+
+    .asm-lineno {
+      color: #444;
+      min-width: 32px;
+      text-align: right;
+      margin-right: 14px;
+      font-size: 10px;
+      user-select: none
+    }
+
+    .asm-instr {
+      color: #e50914;
+      font-weight: 700;
+      min-width: 56px
+    }
+
+    .asm-reg {
+      color: #22c55e;
+      font-weight: 600
+    }
+
+    .asm-imm {
+      color: #38bdf8
+    }
+
+    .asm-mem {
+      color: #fb923c
+    }
+
+    .asm-lbl {
+      color: #fbbf24;
+      font-weight: 700
+    }
+
+    .asm-dir {
+      color: #c084fc;
+      font-weight: 700
+    }
+
+    .asm-cmt {
+      color: #555;
+      font-style: italic
+    }
+
+    .asm-str {
+      color: #fb923c
+    }
+
+    .sem-section {
+      margin-bottom: 16px
+    }
+
+    .sem-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .sem-section-title::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      background: var(--blue);
+      border-radius: 2px
+    }
+
+    .scope-tree {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 200px;
+      overflow: auto
+    }
+
+    .scope-node {
+      line-height: 1.8
+    }
+
+    .scope-name {
+      color: var(--purple);
+      font-weight: 700
+    }
+
+    .scope-var {
+      color: var(--blue)
+    }
+
+    .scope-connector {
+      color: #555
+    }
+
+    .opt-log {
+      max-height: 200px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0a0a0a;
+      padding: 0;
+      margin-bottom: 12px
+    }
+
+    .opt-entry {
+      display: flex;
+      gap: 10px;
+      padding: 6px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(51, 51, 51, .4);
+      align-items: baseline
+    }
+
+    .opt-tag {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap
+    }
+
+    .opt-tag.fold {
+      color: #22c55e;
+      background: rgba(34, 197, 94, .1)
+    }
+
+    .opt-tag.prop {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, .1)
+    }
+
+    .opt-tag.dead {
+      color: #f87171;
+      background: rgba(239, 68, 68, .1)
+    }
+
+    .opt-tag.strength {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, .1)
+    }
+
+    .opt-desc {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .reg-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .reg-name {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 700;
+      font-size: 13px;
+      color: #22c55e;
+      min-width: 44px
+    }
+
+    .reg-arrow {
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .reg-var {
+      font-family: "JetBrains Mono", monospace;
+      color: #38bdf8;
+      font-size: 12px
+    }
+
+    .reg-type {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--muted);
+      background: rgba(128, 128, 128, .1);
+      letter-spacing: .5px
+    }
+
+    .parse-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px
+    }
+
+    .stat-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--red)
+    }
+
+    .stat-value.ok {
+      color: #22c55e
+    }
+
+    .stat-value.blue {
+      color: #38bdf8
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      margin-top: 4px
+    }
+
+    .errors-wrap {
+      max-height: 160px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid rgba(229, 9, 20, .3);
+      background: rgba(229, 9, 20, .04);
+      padding: 12px;
+      margin-bottom: 12px
+    }
+
+    .error-item {
+      color: #e50914;
+      font-size: 12px;
+      font-family: "JetBrains Mono", monospace;
+      margin-bottom: 3px
+    }
+
+    .warn-wrap {
+      max-height: 140px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, .3);
+      background: rgba(245, 158, 11, .04);
+      padding: 12px;
+      margin-bottom: 12px
+    }
+
+    .warn-item {
+      color: #f59e0b;
+      font-size: 12px;
+      font-family: "JetBrains Mono", monospace;
+      margin-bottom: 3px
+    }
+
+    /* Output / Terminal */
+    .output-terminal {
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      min-height: 200px;
+      max-height: 500px;
+      overflow: auto;
+      padding: 0;
+      position: relative
+    }
+
+    .terminal-bar {
+      background: #1a1a1a;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 1
+    }
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%
+    }
+
+    .terminal-dot.r {
+      background: #ff5f57
+    }
+
+    .terminal-dot.y {
+      background: #febc2e
+    }
+
+    .terminal-dot.g {
+      background: #28c840
+    }
+
+    .terminal-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-left: 8px
+    }
+
+    .terminal-body {
+      padding: 14px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #e2e8f0
+    }
+
+    .terminal-body .out-line {
+      color: #e2e8f0
+    }
+
+    .terminal-body .out-error {
+      color: #e50914
+    }
+
+    .terminal-body .out-info {
+      color: #38bdf8
+    }
+
+    .terminal-body .out-warn {
+      color: #f59e0b
+    }
+
+    .terminal-body .out-success {
+      color: #22c55e
+    }
+
+    .terminal-body .out-prompt {
+      color: var(--green)
+    }
+
+    .terminal-body .out-cmd {
+      color: var(--white);
+      font-weight: 700
+    }
+
+    .output-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px
+    }
+
+    .output-stat {
+      padding: 6px 12px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .output-stat .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green)
+    }
+
+    .output-stat.has-error .dot {
+      background: var(--red)
+    }
+
+    .hidden {
+      display: none !important
+    }
+
+    footer {
+      margin-top: 30px;
+      padding: 20px 30px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      background: rgba(0, 0, 0, .3)
+    }
+
+    footer strong {
+      color: var(--white)
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ═══ CYBER TOP BAR ═══ -->
+  <div class="topbar">
+    <div class="cg-logo">CYBER|PIPELINE</div>
+    <nav class="cg-nav">
+      <a class="active" href="#">System</a>
+      <a href="../Lexical analyser/simulation.html">Phases</a>
+      <a href="../Syntax analyzer/simulation.html">AST</a>
+      <a href="../Code generator/simulation.html">ICG</a>
+      <a href="../Code Generation/simulation.html">Code</a>
+    </nav>
+  </div>
+  <!-- ═══ HERO ═══ -->
+  <div class="hero">
+    <h1>CYBERNETIC | CORE</h1>
+    <p class="tagline">End-to-End Neural Compilation Pipeline. Witness the full transformation: <strong>Lexical
+        Analysis</strong> to <strong>Target Execution</strong> across 6 high-fidelity compiler phases.</p>
+  </div>
+  <div class="page">
+    <div class="grid">
+      <!-- LEFT -->
+      <div>
+        <div class="section-title">Source Code</div>
+        <div class="card">
+          <div class="card-label">Input</div>
+          <textarea id="code" spellcheck="false">#include <stdio.h>
+
+int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int a = 5;
+    int b = 10;
+    int c = a + b;
+    int d = c * 2;
+
+    if (a < b) {
+        c = c + 1;
+    } else {
+        c = c - 1;
+    }
+
+    while (d > 0) {
+        d = d - 1;
+    }
+
+    printf("%d\n", factorial(a));
+    return c;
+}</textarea>
+          <div class="controls">
+            <button class="btn-red" id="run">▶ Compile</button>
+            <button class="btn-ghost" id="demo-c">Demo C</button>
+            <button class="btn-ghost" id="demo-py">Demo Python</button>
+            <button class="btn-ghost" id="clear">Clear</button>
+            <span class="status" id="status">Ready</span>
+          </div>
+        </div>
+      </div>
+      <!-- RIGHT -->
+      <div>
+        <div class="section-title">Compiler Output</div>
+        <div class="card">
+          <!-- Pipeline -->
+          <div class="pipeline" id="pipeline">
+            <div class="pipe-step" data-phase="0"><span class="pipe-icon">①</span> Lexical</div><span
+              class="pipe-arrow">→</span>
+            <div class="pipe-step" data-phase="1"><span class="pipe-icon">②</span> Syntax</div><span
+              class="pipe-arrow">→</span>
+            <div class="pipe-step" data-phase="2"><span class="pipe-icon">③</span> Semantic</div><span
+              class="pipe-arrow">→</span>
+            <div class="pipe-step" data-phase="3"><span class="pipe-icon">④</span> ICG</div><span
+              class="pipe-arrow">→</span>
+            <div class="pipe-step" data-phase="4"><span class="pipe-icon">⑤</span> Optimize</div><span
+              class="pipe-arrow">→</span>
+            <div class="pipe-step" data-phase="5"><span class="pipe-icon">⑥</span> CodeGen</div><span
+              class="pipe-arrow">→</span>
+            <div class="pipe-step" data-phase="6"><span class="pipe-icon">⑦</span> Output</div>
+          </div>
+          <!-- Tabs -->
+          <div class="tabs">
+            <button class="tab active" data-tab="tokens">1. Tokens</button>
+            <button class="tab" data-tab="ast">2. AST</button>
+            <button class="tab" data-tab="semantic">3. Semantic</button>
+            <button class="tab" data-tab="tac">4. TAC</button>
+            <button class="tab" data-tab="optimize">5. Optimize</button>
+            <button class="tab" data-tab="asm">6. Assembly</button>
+            <button class="tab" data-tab="output">7. Output</button>
+            <button class="tab" data-tab="summary">Summary</button>
+          </div>
+
+          <div class="errors-wrap hidden" id="errors-panel"></div>
+
+          <!-- 1. Tokens -->
+          <div id="panel-tokens">
+            <div class="badge-row" id="token-summary"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Ln</th>
+                    <th>Col</th>
+                  </tr>
+                </thead>
+                <tbody id="token-tbody">
+                  <tr>
+                    <td colspan="5" class="empty">Click <strong>▶ Compile</strong> to begin.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- 2. AST -->
+          <div id="panel-ast" class="hidden">
+            <div class="ast-wrap" id="ast-container">
+              <div class="empty">Click <strong>▶ Compile</strong> to build AST.</div>
+            </div>
+          </div>
+          <!-- 3. Semantic -->
+          <div id="panel-semantic" class="hidden">
+            <div class="sem-section">
+              <div class="sem-section-title">Symbol Table</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Scope</th>
+                      <th>Init</th>
+                      <th>Line</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sym-tbody">
+                    <tr>
+                      <td colspan="5" class="empty">No data yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="sem-section">
+              <div class="sem-section-title">Scope Tree</div>
+              <div class="scope-tree" id="scope-tree">
+                <div class="empty" style="padding:20px">No data yet.</div>
+              </div>
+            </div>
+            <div id="sem-errors-wrap" class="hidden"></div>
+            <div id="sem-warnings-wrap" class="hidden"></div>
+          </div>
+          <!-- 4. TAC -->
+          <div id="panel-tac" class="hidden">
+            <div class="badge-row" id="tac-summary"></div>
+            <div class="tac-wrap" id="tac-container">
+              <div class="empty" style="padding:40px">Click <strong>▶ Compile</strong> to produce TAC.</div>
+            </div>
+          </div>
+          <!-- 5. Optimize -->
+          <div id="panel-optimize" class="hidden">
+            <div class="badge-row" id="opt-summary"></div>
+            <div class="card-label">Applied Optimizations</div>
+            <div class="opt-log" id="opt-log">
+              <div class="empty" style="padding:20px">No optimizations yet.</div>
+            </div>
+            <div class="card-label">Optimized TAC</div>
+            <div class="tac-wrap" id="opt-tac-container">
+              <div class="empty" style="padding:40px">Click <strong>▶ Compile</strong>.</div>
+            </div>
+          </div>
+          <!-- 6. ASM -->
+          <div id="panel-asm" class="hidden">
+            <div class="badge-row" id="asm-summary"></div>
+            <div class="asm-wrap" id="asm-container">
+              <div class="empty" style="padding:40px">Click <strong>▶ Compile</strong>.</div>
+            </div>
+            <div class="card-label" style="margin-top:12px">Register Allocation</div>
+            <div id="regs-container">
+              <div class="empty">No data.</div>
+            </div>
+          </div>
+          <!-- 7. Output -->
+          <div id="panel-output" class="hidden">
+            <div class="output-terminal" id="output-terminal">
+              <div class="terminal-bar">
+                <span class="terminal-dot r"></span><span class="terminal-dot y"></span><span
+                  class="terminal-dot g"></span>
+                <span class="terminal-title">Program Output</span>
+              </div>
+              <div class="terminal-body" id="output-body"><span class="out-info">Click <strong>▶ Compile</strong> to see
+                  program output...</span></div>
+            </div>
+            <div class="output-stats" id="output-stats"></div>
+          </div>
+          <!-- Summary -->
+          <div id="panel-summary" class="hidden">
+            <div class="parse-summary" id="summary-stats"></div>
+            <div class="card-label" style="margin-top:10px">Instruction Breakdown</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+                <tbody id="instr-tbody">
+                  <tr>
+                    <td colspan="2" class="empty">No data yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <p>Neural Pipeline Interface | Engineer: <span>Sambit</span> | ID: <span>Sambit71936</span></p>
+    <p>&copy; 2025 Cyber-Genesis Systems</p>
+  </footer>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 1: LEXER
+    // ═══════════════════════════════════════════════════════════
+    const KEYWORDS = new Set(["auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if", "int", "long", "register", "return", "short", "signed", "sizeof", "static", "struct", "switch", "typedef", "union", "unsigned", "void", "volatile", "while", "print", "input", "def", "class", "import", "from", "as", "try", "except", "finally", "raise", "with", "yield", "lambda", "pass", "True", "False", "None", "and", "or", "not", "in", "is", "elif"]);
+    const MULTI_OPS = new Set(["==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "<<", ">>", "->", "**", "//"]);
+    const SINGLE_OPS = new Set([..."+-*/%=<>!&|^~?:@"]);
+    const DELIMS = new Set([..."(){}[];,."]);
+
+    function tokenize(src) {
+      const tokens = []; let pos = 0, line = 1, col = 1;
+      const cur = () => pos < src.length ? src[pos] : null, peek = () => pos + 1 < src.length ? src[pos + 1] : null;
+      const adv = () => { if (src[pos] === '\n') { line++; col = 1 } else col++; pos++ };
+      const add = (t, v, l, c) => tokens.push({ type: t, value: v, line: l, column: c });
+      while (pos < src.length) {
+        while (cur() && (cur() === ' ' || cur() === '\t' || cur() === '\r')) adv();
+        const ch = cur(); if (!ch) break;
+        if (ch === '\n') { add('NEWLINE', '\\n', line, col); adv(); continue }
+        if (ch === '#') { const sl = line, sc = col; let d = ''; while (cur() && cur() !== '\n') { d += cur(); adv() } add('PREPROCESSOR', d, sl, sc); continue }
+        if (ch === '/' && peek() === '/') { const sl = line, sc = col; let c = ''; while (cur() && cur() !== '\n') { c += cur(); adv() } add('COMMENT', c, sl, sc); continue }
+        if (ch === '/' && peek() === '*') { const sl = line, sc = col; let c = '/*'; adv(); adv(); while (cur()) { if (cur() === '*' && peek() === '/') { c += '*/'; adv(); adv(); break } c += cur(); adv() } add('COMMENT', c, sl, sc); continue }
+        if (ch >= '0' && ch <= '9') { const sl = line, sc = col; let n = '', isF = false; while (cur() && ((cur() >= '0' && cur() <= '9') || cur() === '.')) { if (cur() === '.') { if (isF) break; isF = true } n += cur(); adv() } add(isF ? 'FLOAT' : 'INTEGER', n, sl, sc); continue }
+        if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_') { const sl = line, sc = col; let w = ''; while (cur() && /[a-zA-Z0-9_]/.test(cur())) { w += cur(); adv() } add(KEYWORDS.has(w) ? 'KEYWORD' : 'IDENTIFIER', w, sl, sc); continue }
+        if (ch === '"' || ch === "'") { const sl = line, sc = col, q = ch; let s = q; adv(); while (cur() && cur() !== q) { if (cur() === '\\') { s += cur(); adv() } if (cur()) { s += cur(); adv() } } if (cur() === q) { s += cur(); adv() } add('STRING', s, sl, sc); continue }
+        if (peek() && MULTI_OPS.has(ch + peek())) { add('OPERATOR', ch + peek(), line, col); adv(); adv(); continue }
+        if (SINGLE_OPS.has(ch)) { add('OPERATOR', ch, line, col); adv(); continue }
+        if (DELIMS.has(ch)) { add('DELIMITER', ch, line, col); adv(); continue }
+        add('UNKNOWN', ch, line, col); adv()
+      }
+      return tokens;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  AST NODE
+    // ═══════════════════════════════════════════════════════════
+    class ASTNode {
+      constructor(type, value = null, line = 0, column = 0) { this.type = type; this.value = value; this.line = line; this.column = column; this.children = [] }
+      addChild(c) { if (c) this.children.push(c); return this }
+      countNodes() { let c = 1; for (const ch of this.children) c += ch.countNodes(); return c }
+      countByType(counts = {}) { counts[this.type] = (counts[this.type] || 0) + 1; for (const ch of this.children) ch.countByType(counts); return counts }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 2: PARSER
+    // ═══════════════════════════════════════════════════════════
+    class Parser {
+      constructor(tokens) { this.tokens = tokens.filter(t => t.type !== 'NEWLINE' && t.type !== 'COMMENT'); this.pos = 0; this.errors = []; this.ast = new ASTNode('PROGRAM') }
+      cur() { return this.pos < this.tokens.length ? this.tokens[this.pos] : null }
+      adv() { const t = this.cur(); this.pos++; return t }
+      addError(msg, token) { const t = token || this.cur(); if (t) this.errors.push({ message: msg, line: t.line, column: t.column, value: t.value }); else this.errors.push({ message: msg, line: 0, column: 0, value: 'EOF' }) }
+      expect(type, value) { const t = this.cur(); if (!t) { this.addError(`Expected ${type}${value ? " '" + value + "'" : ''}, got EOF`); return null } if (t.type !== type || (value !== undefined && t.value !== value)) { this.addError(`Expected ${type}${value ? " '" + value + "'" : ''}, got '${t.value}'`, t); return null } return this.adv() }
+      match(type, value) { const t = this.cur(); if (!t || t.type !== type) return false; if (value !== undefined && t.value !== value) return false; return true }
+      matchAnyKw(kws) { const t = this.cur(); return t && t.type === 'KEYWORD' && kws.includes(t.value) }
+
+      parse() { while (this.cur()) { if (this.match('PREPROCESSOR')) { const t = this.cur(); this.ast.addChild(new ASTNode('PREPROCESSOR', t.value, t.line, t.column)); this.adv(); continue } const s = this.parseStatement(); if (s) this.ast.addChild(s); else { if (this.cur()) { this.addError(`Unexpected '${this.cur().value}'`); this.adv() } } } return this.ast }
+
+      parseStatement() { const t = this.cur(); if (!t) return null; const cT = ["int", "float", "double", "char", "void", "long", "short", "signed", "unsigned", "auto", "static", "extern", "register", "const", "volatile"]; if (t.type === 'KEYWORD' && cT.includes(t.value)) return this.parseDeclOrFunc(); if (this.match('KEYWORD', 'return')) return this.parseReturn(); if (this.match('KEYWORD', 'if')) return this.parseIf(); if (this.match('KEYWORD', 'while')) return this.parseWhile(); if (this.match('KEYWORD', 'do')) return this.parseDoWhile(); if (this.match('KEYWORD', 'for')) return this.parseFor(); if (this.match('KEYWORD', 'switch')) return this.parseSwitch(); if (this.match('KEYWORD', 'break')) { const t = this.adv(); if (this.match('DELIMITER', ';')) this.adv(); return new ASTNode('BREAK', null, t.line, t.column) } if (this.match('KEYWORD', 'continue')) { const t = this.adv(); if (this.match('DELIMITER', ';')) this.adv(); return new ASTNode('CONTINUE', null, t.line, t.column) } if (this.match('KEYWORD', 'goto')) { const t = this.adv(); const n = new ASTNode('GOTO', null, t.line, t.column); if (this.match('IDENTIFIER')) { const l = this.adv(); n.addChild(new ASTNode('LABEL', l.value, l.line, l.column)) } this.expect('DELIMITER', ';'); return n } if (this.match('KEYWORD', 'struct')) return this.parseStruct(); if (this.match('KEYWORD', 'enum')) return this.parseEnum(); if (this.match('KEYWORD', 'typedef')) return this.parseTypedef(); if (this.match('KEYWORD', 'def')) return this.parsePyDef(); if (this.match('KEYWORD', 'class')) return this.parsePyClass(); if (this.match('KEYWORD', 'import') || this.match('KEYWORD', 'from')) return this.parsePyImport(); if (this.match('KEYWORD', 'elif')) return this.parseElif(); if (this.match('KEYWORD', 'try')) { const t = this.adv(); const n = new ASTNode('TRY', null, t.line, t.column); if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'except')) { const t = this.adv(); const n = new ASTNode('EXCEPT', null, t.line, t.column); if (this.cur() && !this.match('OPERATOR', ':')) { const e = this.parseExpr(); if (e) n.addChild(e); if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); n.addChild(new ASTNode('ALIAS', a.value, a.line, a.column)) } } } if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'finally')) { const t = this.adv(); if (this.match('OPERATOR', ':')) this.adv(); return new ASTNode('FINALLY', null, t.line, t.column) } if (this.match('KEYWORD', 'with')) { const t = this.adv(); const n = new ASTNode('WITH', null, t.line, t.column); const e = this.parseExpr(); if (e) n.addChild(e); if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); n.addChild(new ASTNode('ALIAS', a.value, a.line, a.column)) } } if (this.match('OPERATOR', ':')) this.adv(); return n } if (this.match('KEYWORD', 'raise')) { const t = this.adv(); const n = new ASTNode('RAISE', null, t.line, t.column); if (this.cur() && !this.match('DELIMITER', ';') && !this.match('OPERATOR', ':')) { const e = this.parseExpr(); if (e) n.addChild(e) } return n } if (this.match('KEYWORD', 'pass')) { const t = this.adv(); return new ASTNode('PASS', null, t.line, t.column) } if (this.match('KEYWORD', 'yield')) { const t = this.adv(); const n = new ASTNode('YIELD', null, t.line, t.column); if (this.cur() && !this.match('DELIMITER', ';')) { const e = this.parseExpr(); if (e) n.addChild(e) } return n } if (this.match('KEYWORD', 'print')) return this.parseExprStmt(); if (this.match('DELIMITER', '{')) return this.parseBlock(); if (['IDENTIFIER', 'INTEGER', 'FLOAT', 'STRING', 'DELIMITER', 'OPERATOR', 'KEYWORD'].includes(t.type)) return this.parseExprStmt(); return null }
+
+      parseDeclOrFunc() { const st = this.cur(), nL = st.line, nC = st.column; let ts = ''; const cT = ["int", "float", "double", "char", "void", "long", "short", "signed", "unsigned", "auto", "static", "extern", "register", "const", "volatile"]; while (this.cur() && this.cur().type === 'KEYWORD' && cT.includes(this.cur().value)) { ts += (ts ? ' ' : '') + this.cur().value; this.adv() } while (this.match('OPERATOR', '*')) { ts += '*'; this.adv() } if (!this.match('IDENTIFIER')) { this.addError(`Expected identifier after '${ts}'`); return new ASTNode('ERROR', ts, nL, nC) } const name = this.adv(); if (this.match('DELIMITER', '(')) return this.parseFuncDef(ts, name, nL, nC); const node = new ASTNode('VAR_DECL', ts, nL, nC); const vn = new ASTNode('VARIABLE', name.value, name.line, name.column); if (this.match('DELIMITER', '[')) { this.adv(); if (this.cur() && (this.cur().type === 'INTEGER' || this.cur().type === 'IDENTIFIER')) { vn.addChild(new ASTNode('ARRAY_SIZE', this.cur().value, this.cur().line, this.cur().column)); this.adv() } this.expect('DELIMITER', ']') } if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) { const i = new ASTNode('INITIALIZER'); i.addChild(e); vn.addChild(i) } } node.addChild(vn); while (this.match('DELIMITER', ',')) { this.adv(); if (this.match('OPERATOR', '*')) this.adv(); if (this.match('IDENTIFIER')) { const nv = this.adv(), nn = new ASTNode('VARIABLE', nv.value, nv.line, nv.column); if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) { const i = new ASTNode('INITIALIZER'); i.addChild(e); nn.addChild(i) } } node.addChild(nn) } } this.expect('DELIMITER', ';'); return node }
+
+      parseFuncDef(rt, name, line, col) { const n = new ASTNode('FUNC_DEF', name.value, line, col); n.addChild(new ASTNode('RETURN_TYPE', rt, line, col)); const pn = new ASTNode('PARAMETERS'); this.expect('DELIMITER', '('); if (!this.match('DELIMITER', ')')) this.parseParamList(pn); this.expect('DELIMITER', ')'); n.addChild(pn); if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else this.expect('DELIMITER', ';'); return n }
+
+      parseParamList(pn) { const cT = ["int", "float", "double", "char", "void", "long", "short", "signed", "unsigned", "const"]; while (true) { const p = new ASTNode('PARAM'); let ts = ''; while (this.cur() && this.cur().type === 'KEYWORD' && cT.includes(this.cur().value)) { ts += (ts ? ' ' : '') + this.cur().value; this.adv() } while (this.match('OPERATOR', '*')) { ts += '*'; this.adv() } if (ts) p.addChild(new ASTNode('TYPE', ts)); if (this.match('IDENTIFIER')) { const nm = this.adv(); p.addChild(new ASTNode('NAME', nm.value, nm.line, nm.column)) } pn.addChild(p); if (this.match('DELIMITER', ',')) this.adv(); else break } }
+
+      parseBlock() { const t = this.cur(); const n = new ASTNode('BLOCK', null, t ? t.line : 0, t ? t.column : 0); this.expect('DELIMITER', '{'); while (this.cur() && !this.match('DELIMITER', '}')) { const s = this.parseStatement(); if (s) n.addChild(s); else { if (this.cur() && !this.match('DELIMITER', '}')) { this.addError('Unexpected token in block'); this.adv() } } } this.expect('DELIMITER', '}'); return n }
+
+      parseReturn() { const t = this.adv(), n = new ASTNode('RETURN', null, t.line, t.column); if (!this.match('DELIMITER', ';')) { const e = this.parseExpr(); if (e) n.addChild(e) } this.expect('DELIMITER', ';'); return n }
+
+      parseIf() { const t = this.adv(), n = new ASTNode('IF', null, t.line, t.column); if (this.match('DELIMITER', '(')) { this.adv(); const c = this.parseExpr(), cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); this.expect('DELIMITER', ')') } else { const c = this.parseExpr(), cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); if (this.match('OPERATOR', ':')) this.adv() } if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else { const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } if (this.match('KEYWORD', 'else')) { this.adv(); if (this.match('KEYWORD', 'if')) { const en = new ASTNode('ELSE_IF'); en.addChild(this.parseIf()); n.addChild(en) } else if (this.match('DELIMITER', '{')) { const en = new ASTNode('ELSE'); en.addChild(this.parseBlock()); n.addChild(en) } else { if (this.match('OPERATOR', ':')) this.adv(); const en = new ASTNode('ELSE'), s = this.parseStatement(); if (s) en.addChild(s); n.addChild(en) } } return n }
+
+      parseElif() { const t = this.adv(), n = new ASTNode('ELIF', null, t.line, t.column); const c = this.parseExpr(), cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); if (this.match('OPERATOR', ':')) this.adv(); const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } return n }
+
+      parseWhile() { const t = this.adv(), n = new ASTNode('WHILE', null, t.line, t.column); if (this.match('DELIMITER', '(')) { this.adv(); const c = this.parseExpr(), cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); this.expect('DELIMITER', ')') } else { const c = this.parseExpr(), cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); if (this.match('OPERATOR', ':')) this.adv() } if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else { const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } return n }
+
+      parseDoWhile() { const t = this.adv(), n = new ASTNode('DO_WHILE', null, t.line, t.column); if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); this.expect('KEYWORD', 'while'); if (this.match('DELIMITER', '(')) { this.adv(); const c = this.parseExpr(), cn = new ASTNode('CONDITION'); if (c) cn.addChild(c); n.addChild(cn); this.expect('DELIMITER', ')') } this.expect('DELIMITER', ';'); return n }
+
+      parseFor() { const t = this.adv(), n = new ASTNode('FOR', null, t.line, t.column); if (this.match('DELIMITER', '(')) { this.adv(); const init = new ASTNode('INIT'); if (!this.match('DELIMITER', ';')) { const e = this.parseExprOrDecl(); if (e) init.addChild(e) } n.addChild(init); if (this.match('DELIMITER', ';')) this.adv(); const cond = new ASTNode('CONDITION'); if (!this.match('DELIMITER', ';')) { const c = this.parseExpr(); if (c) cond.addChild(c) } n.addChild(cond); if (this.match('DELIMITER', ';')) this.adv(); const upd = new ASTNode('UPDATE'); if (!this.match('DELIMITER', ')')) { const u = this.parseExpr(); if (u) upd.addChild(u) } n.addChild(upd); this.expect('DELIMITER', ')'); if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); else { const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } } else { if (this.match('IDENTIFIER')) { const vt = this.adv(); n.addChild(new ASTNode('ITERATOR', vt.value, vt.line, vt.column)) } this.expect('KEYWORD', 'in'); const it = this.parseExpr(); if (it) { const itn = new ASTNode('ITERABLE'); itn.addChild(it); n.addChild(itn) } if (this.match('OPERATOR', ':')) this.adv(); const s = this.parseStatement(); if (s) { const b = new ASTNode('BODY'); b.addChild(s); n.addChild(b) } } return n }
+
+      parseSwitch() { const t = this.adv(), n = new ASTNode('SWITCH', null, t.line, t.column); this.expect('DELIMITER', '('); const e = this.parseExpr(), en = new ASTNode('SWITCH_EXPR'); if (e) en.addChild(e); n.addChild(en); this.expect('DELIMITER', ')'); this.expect('DELIMITER', '{'); while (this.cur() && !this.match('DELIMITER', '}')) { if (this.match('KEYWORD', 'case')) { const ct = this.adv(), cn = new ASTNode('CASE', null, ct.line, ct.column); const ce = this.parseExpr(); if (ce) cn.addChild(ce); this.expect('OPERATOR', ':'); while (this.cur() && !this.match('KEYWORD', 'case') && !this.match('KEYWORD', 'default') && !this.match('DELIMITER', '}')) { const s = this.parseStatement(); if (s) cn.addChild(s); else break } n.addChild(cn) } else if (this.match('KEYWORD', 'default')) { const dt = this.adv(), dn = new ASTNode('DEFAULT', null, dt.line, dt.column); this.expect('OPERATOR', ':'); while (this.cur() && !this.match('DELIMITER', '}')) { const s = this.parseStatement(); if (s) dn.addChild(s); else break } n.addChild(dn) } else { this.addError("Expected 'case' or 'default'"); this.adv() } } this.expect('DELIMITER', '}'); return n }
+
+      parseStruct() { const t = this.adv(), n = new ASTNode('STRUCT', null, t.line, t.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); n.value = nm.value } if (this.match('DELIMITER', '{')) n.addChild(this.parseBlock()); if (this.match('DELIMITER', ';')) this.adv(); return n }
+      parseEnum() { const t = this.adv(), n = new ASTNode('ENUM', null, t.line, t.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); n.value = nm.value } if (this.match('DELIMITER', '{')) { this.adv(); while (this.cur() && !this.match('DELIMITER', '}')) { if (this.match('IDENTIFIER')) { const ev = this.adv(), m = new ASTNode('MEMBER', ev.value, ev.line, ev.column); if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) m.addChild(e) } n.addChild(m) } if (this.match('DELIMITER', ',')) this.adv(); else break } this.expect('DELIMITER', '}') } if (this.match('DELIMITER', ';')) this.adv(); return n }
+      parseTypedef() { const t = this.adv(), n = new ASTNode('TYPEDEF', null, t.line, t.column); const parts = []; while (this.cur() && !this.match('DELIMITER', ';')) { parts.push(this.cur().value); this.adv() } if (parts.length) n.value = parts.join(' '); this.expect('DELIMITER', ';'); return n }
+
+      parsePyDef() { const t = this.adv(), n = new ASTNode('FUNC_DEF', null, t.line, t.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); n.value = nm.value } const pn = new ASTNode('PARAMETERS'); if (this.match('DELIMITER', '(')) { this.adv(); while (!this.match('DELIMITER', ')') && this.cur()) { if (this.match('OPERATOR', '*')) this.adv(); if (this.match('IDENTIFIER')) { const pt = this.adv(), p = new ASTNode('PARAM', pt.value, pt.line, pt.column); if (this.match('OPERATOR', '=')) { this.adv(); const d = this.parseExpr(); if (d) { const dn = new ASTNode('DEFAULT'); dn.addChild(d); p.addChild(dn) } } pn.addChild(p) } if (this.match('DELIMITER', ',')) this.adv(); else break } this.expect('DELIMITER', ')') } n.addChild(pn); if (this.match('OPERATOR', ':')) this.adv(); return n }
+      parsePyClass() { const t = this.adv(), n = new ASTNode('CLASS_DEF', null, t.line, t.column); if (this.match('IDENTIFIER')) { const nm = this.adv(); n.value = nm.value } if (this.match('DELIMITER', '(')) { this.adv(); const bases = new ASTNode('BASES'); while (!this.match('DELIMITER', ')') && this.cur()) { if (this.match('IDENTIFIER')) { const b = this.adv(); bases.addChild(new ASTNode('BASE', b.value, b.line, b.column)) } if (this.match('DELIMITER', ',')) this.adv(); else break } this.expect('DELIMITER', ')'); n.addChild(bases) } if (this.match('OPERATOR', ':')) this.adv(); return n }
+      parsePyImport() { const t = this.adv(), n = new ASTNode('IMPORT', null, t.line, t.column); if (t.value === 'from') { if (this.match('IDENTIFIER')) { const m = this.adv(); n.addChild(new ASTNode('MODULE', m.value, m.line, m.column)) } this.expect('KEYWORD', 'import'); while (this.match('IDENTIFIER')) { const imp = this.adv(), in_ = new ASTNode('NAME', imp.value, imp.line, imp.column); if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); in_.addChild(new ASTNode('ALIAS', a.value)) } } n.addChild(in_); if (this.match('DELIMITER', ',')) this.adv(); else break } } else { while (this.match('IDENTIFIER')) { const m = this.adv(), mn = new ASTNode('MODULE', m.value, m.line, m.column); while (this.match('DELIMITER', '.')) { this.adv(); if (this.match('IDENTIFIER')) { const s = this.adv(); mn.value += '.' + s.value } } if (this.match('KEYWORD', 'as')) { this.adv(); if (this.match('IDENTIFIER')) { const a = this.adv(); mn.addChild(new ASTNode('ALIAS', a.value)) } } n.addChild(mn); if (this.match('DELIMITER', ',')) this.adv(); else break } } return n }
+
+      parseExprStmt() { const e = this.parseExpr(); if (!e) return null; const n = new ASTNode('EXPR_STMT', null, e.line, e.column); n.addChild(e); if (this.match('DELIMITER', ';')) this.adv(); return n }
+      parseExprOrDecl() { const cT = ["int", "float", "double", "char", "long", "short", "signed", "unsigned"]; if (this.cur() && this.cur().type === 'KEYWORD' && cT.includes(this.cur().value)) { const tt = this.adv(), n = new ASTNode('VAR_DECL', tt.value, tt.line, tt.column); if (this.match('IDENTIFIER')) { const nm = this.adv(), vn = new ASTNode('VARIABLE', nm.value, nm.line, nm.column); if (this.match('OPERATOR', '=')) { this.adv(); const e = this.parseExpr(); if (e) { const i = new ASTNode('INITIALIZER'); i.addChild(e); vn.addChild(i) } } n.addChild(vn) } return n } return this.parseExpr() }
+
+      parseExpr() { let left = this.parseTernary(); if (!left) return null; const aOps = ['=', '+=', '-=', '*=', '/=']; if (this.cur() && this.cur().type === 'OPERATOR' && aOps.includes(this.cur().value)) { const op = this.adv(), right = this.parseExpr(); const n = new ASTNode('ASSIGN', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); return n } return left }
+      parseTernary() { let left = this.parseLogOr(); if (left && this.match('OPERATOR', '?')) { this.adv(); const t = this.parseExpr(); this.expect('OPERATOR', ':'); const f = this.parseExpr(); const n = new ASTNode('TERNARY', '?:', left.line, left.column); n.addChild(left); if (t) n.addChild(t); if (f) n.addChild(f); return n } return left }
+      parseLogOr() { let left = this.parseLogAnd(); while (this.cur() && ['OPERATOR', 'KEYWORD'].includes(this.cur().type) && ['||', 'or'].includes(this.cur().value)) { const op = this.adv(), right = this.parseLogAnd(); const n = new ASTNode('LOG_OR', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseLogAnd() { let left = this.parseEquality(); while (this.cur() && ['OPERATOR', 'KEYWORD'].includes(this.cur().type) && ['&&', 'and'].includes(this.cur().value)) { const op = this.adv(), right = this.parseEquality(); const n = new ASTNode('LOG_AND', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseEquality() { let left = this.parseRelational(); while (this.cur() && this.cur().type === 'OPERATOR' && ['==', '!='].includes(this.cur().value)) { const op = this.adv(), right = this.parseRelational(); const n = new ASTNode('EQUALITY', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseRelational() { let left = this.parseAdditive(); while (this.cur() && this.cur().type === 'OPERATOR' && ['<', '>', '<=', '>='].includes(this.cur().value)) { const op = this.adv(), right = this.parseAdditive(); const n = new ASTNode('RELATIONAL', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } if (this.matchAnyKw(['in', 'is', 'not'])) { let ov = this.adv().value; if (ov === 'not' && this.match('KEYWORD', 'in')) { ov = 'not in'; this.adv() } else if (ov === 'is' && this.match('KEYWORD', 'not')) { ov = 'is not'; this.adv() } const right = this.parseAdditive(); const n = new ASTNode('RELATIONAL', ov, left ? left.line : 0, left ? left.column : 0); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseAdditive() { let left = this.parseMult(); while (this.cur() && this.cur().type === 'OPERATOR' && ['+', '-'].includes(this.cur().value)) { const op = this.adv(), right = this.parseMult(); const n = new ASTNode('BIN_OP', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseMult() { let left = this.parseUnary(); while (this.cur() && this.cur().type === 'OPERATOR' && ['*', '/', '%', '//'].includes(this.cur().value)) { const op = this.adv(), right = this.parseUnary(); const n = new ASTNode('BIN_OP', op.value, op.line, op.column); n.addChild(left); if (right) n.addChild(right); left = n } return left }
+      parseUnary() { if (this.cur() && this.cur().type === 'OPERATOR' && ['+', '-', '!', '~', '*', '&'].includes(this.cur().value)) { const op = this.adv(), o = this.parseUnary(); const n = new ASTNode('UNARY', op.value, op.line, op.column); if (o) n.addChild(o); return n } if (this.match('KEYWORD', 'not')) { const op = this.adv(), o = this.parseUnary(); const n = new ASTNode('UNARY', 'not', op.line, op.column); if (o) n.addChild(o); return n } if (this.match('KEYWORD', 'sizeof')) { const op = this.adv(), n = new ASTNode('SIZEOF', null, op.line, op.column); if (this.match('DELIMITER', '(')) { this.adv(); const e = this.parseExpr(); if (e) n.addChild(e); this.expect('DELIMITER', ')') } return n } if (this.cur() && this.cur().type === 'OPERATOR' && ['++', '--'].includes(this.cur().value)) { const op = this.adv(), o = this.parseUnary(); const n = new ASTNode('PREFIX', op.value, op.line, op.column); if (o) n.addChild(o); return n } return this.parsePostfix() }
+      parsePostfix() { let left = this.parsePrimary(); if (!left) return null; while (this.cur()) { if (this.match('DELIMITER', '(')) { this.adv(); const call = new ASTNode('CALL', null, left.line, left.column); call.addChild(left); const args = new ASTNode('ARGS'); if (!this.match('DELIMITER', ')')) { let a = this.parseExpr(); if (a) args.addChild(a); while (this.match('DELIMITER', ',')) { this.adv(); a = this.parseExpr(); if (a) args.addChild(a) } } call.addChild(args); this.expect('DELIMITER', ')'); left = call; continue } if (this.match('DELIMITER', '[')) { this.adv(); const acc = new ASTNode('INDEX', null, left.line, left.column); acc.addChild(left); const idx = this.parseExpr(); if (idx) acc.addChild(idx); this.expect('DELIMITER', ']'); left = acc; continue } if (this.match('DELIMITER', '.')) { this.adv(); const mem = new ASTNode('DOT', null, left.line, left.column); mem.addChild(left); if (this.match('IDENTIFIER')) { const m = this.adv(); mem.addChild(new ASTNode('MEMBER', m.value, m.line, m.column)) } left = mem; continue } if (this.match('OPERATOR', '->')) { this.adv(); const arr = new ASTNode('ARROW', null, left.line, left.column); arr.addChild(left); if (this.match('IDENTIFIER')) { const m = this.adv(); arr.addChild(new ASTNode('MEMBER', m.value, m.line, m.column)) } left = arr; continue } if (this.cur() && this.cur().type === 'OPERATOR' && ['++', '--'].includes(this.cur().value)) { const op = this.adv(); const n = new ASTNode('POSTFIX', op.value, op.line, op.column); n.addChild(left); left = n; continue } break } return left }
+      parsePrimary() { const t = this.cur(); if (!t) return null; if (t.type === 'INTEGER') { this.adv(); return new ASTNode('INT', t.value, t.line, t.column) } if (t.type === 'FLOAT') { this.adv(); return new ASTNode('FLOAT', t.value, t.line, t.column) } if (t.type === 'STRING') { this.adv(); return new ASTNode('STRING', t.value, t.line, t.column) } if (t.type === 'KEYWORD' && (t.value === 'True' || t.value === 'False')) { this.adv(); return new ASTNode('BOOL', t.value, t.line, t.column) } if (t.type === 'KEYWORD' && t.value === 'None') { this.adv(); return new ASTNode('NONE', t.value, t.line, t.column) } if (t.type === 'IDENTIFIER') { this.adv(); return new ASTNode('ID', t.value, t.line, t.column) } if (t.type === 'KEYWORD' && (t.value === 'print' || t.value === 'input')) { this.adv(); return new ASTNode('ID', t.value, t.line, t.column) } if (this.match('DELIMITER', '(')) { this.adv(); const e = this.parseExpr(); this.expect('DELIMITER', ')'); if (e) { const g = new ASTNode('GROUP', null, t.line, t.column); g.addChild(e); return g } return null } if (this.match('DELIMITER', '[')) { this.adv(); const n = new ASTNode('LIST', null, t.line, t.column); if (!this.match('DELIMITER', ']')) { let el = this.parseExpr(); if (el) n.addChild(el); while (this.match('DELIMITER', ',')) { this.adv(); if (this.match('DELIMITER', ']')) break; el = this.parseExpr(); if (el) n.addChild(el) } } this.expect('DELIMITER', ']'); return n } return null }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 3: SEMANTIC ANALYZER
+    // ═══════════════════════════════════════════════════════════
+    class SemanticAnalyzer {
+      constructor() { this.symbols = []; this.scopes = [{ name: 'global', children: [], vars: {} }]; this.scopeStack = ['global']; this.errors = []; this.warnings = []; this.currentScope = 'global' }
+      pushScope(name) { const s = { name, children: [], vars: {} }; const parent = this.scopes.find(sc => sc.name === this.currentScope); if (parent) parent.children.push(s); this.scopes.push(s); this.scopeStack.push(name); this.currentScope = name }
+      popScope() { const oldScope = this.currentScope; const scope = this.scopes.find(s => s.name === oldScope); if (scope) { for (const [name, info] of Object.entries(scope.vars)) { if (!info.used && name !== '_') this.warnings.push({ message: `Variable '${name}' declared but never used`, line: info.line, scope: oldScope }) } } this.scopeStack.pop(); this.currentScope = this.scopeStack[this.scopeStack.length - 1] || 'global' }
+      declareVar(name, type, line, initialized = false) { const scope = this.scopes.find(s => s.name === this.currentScope); if (scope && scope.vars[name]) { this.errors.push({ message: `Duplicate declaration of '${name}' in scope '${this.currentScope}'`, line }); return } if (scope) scope.vars[name] = { type, line, initialized, used: false }; this.symbols.push({ name, type, scope: this.currentScope, initialized, line }) }
+      useVar(name, line) { for (let i = this.scopeStack.length - 1; i >= 0; i--) { const scope = this.scopes.find(s => s.name === this.scopeStack[i]); if (scope && scope.vars[name]) { scope.vars[name].used = true; if (!scope.vars[name].initialized) this.warnings.push({ message: `Variable '${name}' may be used before initialization`, line }); return scope.vars[name] } } this.errors.push({ message: `Undeclared variable '${name}'`, line }); return null }
+      assignVar(name, line) { for (let i = this.scopeStack.length - 1; i >= 0; i--) { const scope = this.scopes.find(s => s.name === this.scopeStack[i]); if (scope && scope.vars[name]) { scope.vars[name].initialized = true; scope.vars[name].used = true; const sym = this.symbols.find(s => s.name === name && s.scope === this.scopeStack[i]); if (sym) sym.initialized = true; return } } }
+
+      analyze(node) {
+        if (!node) return; switch (node.type) {
+          case 'PROGRAM': for (const ch of node.children) this.analyze(ch); break;
+          case 'FUNC_DEF': { const fname = node.value || 'anon'; this.declareVar(fname, 'function', node.line, true); this.pushScope(`func:${fname}`); const params = node.children.find(c => c.type === 'PARAMETERS'); if (params) for (const p of params.children) { const nameNode = p.children ? p.children.find(c => c.type === 'NAME') : null; const typeNode = p.children ? p.children.find(c => c.type === 'TYPE') : null; const pname = nameNode ? nameNode.value : (p.value || 'param'); this.declareVar(pname, typeNode ? typeNode.value : 'auto', p.line || node.line, true) } for (const ch of node.children) if (ch.type !== 'PARAMETERS' && ch.type !== 'RETURN_TYPE') this.analyze(ch); this.popScope(); break }
+          case 'VAR_DECL': { const bt = node.value || 'auto'; for (const ch of node.children) if (ch.type === 'VARIABLE') { const hasInit = ch.children.some(c => c.type === 'INITIALIZER'); this.declareVar(ch.value, bt, ch.line || node.line, hasInit); if (hasInit) for (const ic of ch.children) if (ic.type === 'INITIALIZER') for (const e of ic.children) this.analyzeExpr(e) } break }
+          case 'BLOCK': case 'BODY': for (const ch of node.children) this.analyze(ch); break;
+          case 'IF': case 'ELIF': case 'WHILE': case 'DO_WHILE': case 'FOR': { this.pushScope(`block:${node.type.toLowerCase()}_L${node.line}`); for (const ch of node.children) this.analyze(ch); this.popScope(); break }
+          case 'CONDITION': for (const ch of node.children) this.analyzeExpr(ch); break;
+          case 'INIT': case 'UPDATE': for (const ch of node.children) { if (ch.type === 'VAR_DECL') this.analyze(ch); else this.analyzeExpr(ch) } break;
+          case 'RETURN': for (const ch of node.children) this.analyzeExpr(ch); break;
+          case 'EXPR_STMT': for (const ch of node.children) this.analyzeExpr(ch); break;
+          case 'ELSE': case 'ELSE_IF': for (const ch of node.children) this.analyze(ch); break;
+          case 'CLASS_DEF': { const cn = node.value || 'anon'; this.declareVar(cn, 'class', node.line, true); this.pushScope(`class:${cn}`); for (const ch of node.children) this.analyze(ch); this.popScope(); break }
+          case 'SWITCH': { this.pushScope(`block:switch_L${node.line}`); for (const ch of node.children) this.analyze(ch); this.popScope(); break }
+          case 'CASE': case 'DEFAULT': for (const ch of node.children) this.analyze(ch); break;
+          default: for (const ch of node.children) this.analyze(ch)
+        }
+      }
+
+      analyzeExpr(node) {
+        if (!node) return; switch (node.type) {
+          case 'ID': this.useVar(node.value, node.line); break;
+          case 'ASSIGN': { if (node.children[0] && node.children[0].type === 'ID') this.assignVar(node.children[0].value, node.line); for (const ch of node.children) this.analyzeExpr(ch); break }
+          default: for (const ch of node.children) this.analyzeExpr(ch)
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 4: TAC GENERATOR
+    // ═══════════════════════════════════════════════════════════
+    class TACGenerator {
+      constructor() { this.instructions = []; this.tempCount = 0; this.labelCount = 0; this.symbols = {}; this.currentScope = 'global' }
+      newTemp() { return `t${this.tempCount++}` } newLabel() { return `L${this.labelCount++}` }
+      emit(op, arg1 = '', arg2 = '', result = '') { this.instructions.push({ op, arg1: String(arg1), arg2: String(arg2), result: String(result) }) }
+      emitLabel(label) { this.instructions.push({ op: 'label', arg1: '', arg2: '', result: '', label }) }
+      emitComment(text) { this.instructions.push({ op: 'comment', arg1: '', arg2: '', result: '', comment: text }) }
+      addSymbol(name, type) { this.symbols[name] = { type, scope: this.currentScope } }
+
+      generate(ast) { this.visit(ast); return { instructions: this.instructions, symbols: this.symbols, tempCount: this.tempCount, labelCount: this.labelCount } }
+
+      visit(node) {
+        if (!node) return ''; switch (node.type) {
+          case 'PROGRAM': for (const ch of node.children) this.visit(ch); return '';
+          case 'FUNC_DEF': { const fn = node.value || 'unknown'; const prev = this.currentScope; this.currentScope = fn; this.emitComment(`Function: ${fn}`); this.emitLabel(`func_${fn}`); this.emit('begin_func', fn); const params = node.children.find(c => c.type === 'PARAMETERS'); if (params) params.children.forEach((p, i) => { const nameNode = p.children ? p.children.find(c => c.type === 'NAME') : null; const name = nameNode ? nameNode.value : (p.value || `param${i}`); this.emit('param', name, '', `arg${i}`); this.addSymbol(name, 'int') }); const block = node.children.find(c => c.type === 'BLOCK'); if (block) for (const ch of block.children) this.visit(ch); this.emit('end_func', fn); this.currentScope = prev; return '' }
+          case 'VAR_DECL': { const bt = node.value || 'unknown'; for (const ch of node.children) if (ch.type === 'VARIABLE') { this.addSymbol(ch.value, bt); const init = ch.children.find(c => c.type === 'INITIALIZER'); if (init && init.children[0]) { const val = this.visitExpr(init.children[0]); this.emit('=', val, '', ch.value) } else this.emit('=', '0', '', ch.value) } return '' }
+          case 'EXPR_STMT': if (node.children[0]) this.visitExpr(node.children[0]); return '';
+          case 'RETURN': { if (node.children[0]) { const val = this.visitExpr(node.children[0]); this.emit('return', val) } else this.emit('return'); return '' }
+          case 'IF': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const elseNode = node.children.find(c => c.type === 'ELSE'); const elseIfNode = node.children.find(c => c.type === 'ELSE_IF'); const lF = this.newLabel(), lE = this.newLabel(); this.emitComment('if statement'); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lF) } if (block) for (const ch of (block.children || [])) this.visit(ch); if (elseNode || elseIfNode) this.emit('goto', '', '', lE); this.emitLabel(lF); if (elseNode) { this.emitComment('else'); for (const ch of elseNode.children) this.visit(ch) } if (elseIfNode) for (const ch of elseIfNode.children) this.visit(ch); if (elseNode || elseIfNode) this.emitLabel(lE); return '' }
+          case 'ELIF': { const condNode = node.children.find(c => c.type === 'CONDITION'); const body = node.children.find(c => c.type === 'BODY' || c.type === 'BLOCK'); const lF = this.newLabel(); this.emitComment('elif'); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lF) } if (body) for (const ch of (body.children || [])) this.visit(ch); this.emitLabel(lF); return '' }
+          case 'WHILE': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const lS = this.newLabel(), lE = this.newLabel(); this.emitComment('while loop'); this.emitLabel(lS); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lE) } if (block) for (const ch of (block.children || [])) this.visit(ch); this.emit('goto', '', '', lS); this.emitLabel(lE); return '' }
+          case 'DO_WHILE': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK'); const lS = this.newLabel(); this.emitComment('do-while'); this.emitLabel(lS); if (block) for (const ch of block.children) this.visit(ch); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_true', cond, '', lS) } return '' }
+          case 'FOR': { const initNode = node.children.find(c => c.type === 'INIT'); const condNode = node.children.find(c => c.type === 'CONDITION'); const updNode = node.children.find(c => c.type === 'UPDATE'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const lS = this.newLabel(), lE = this.newLabel(); this.emitComment('for loop'); if (initNode) for (const ch of initNode.children) { if (ch.type === 'VAR_DECL') this.visit(ch); else this.visitExpr(ch) } this.emitLabel(lS); if (condNode && condNode.children[0]) { const cond = this.visitExpr(condNode.children[0]); this.emit('if_false', cond, '', lE) } if (block) for (const ch of (block.children || [])) this.visit(ch); if (updNode && updNode.children[0]) this.visitExpr(updNode.children[0]); this.emit('goto', '', '', lS); this.emitLabel(lE); return '' }
+          case 'SWITCH': { const exprNode = node.children.find(c => c.type === 'SWITCH_EXPR'); const lE = this.newLabel(); let sv = ''; this.emitComment('switch'); if (exprNode && exprNode.children[0]) sv = this.visitExpr(exprNode.children[0]); for (const ch of node.children) { if (ch.type === 'CASE') { const lN = this.newLabel(); if (ch.children[0]) { const cv = this.visitExpr(ch.children[0]); const t = this.newTemp(); this.emit('==', sv, cv, t); this.emit('if_false', t, '', lN) } for (let i = 1; i < ch.children.length; i++) { if (ch.children[i].type === 'BREAK') this.emit('goto', '', '', lE); else this.visit(ch.children[i]) } this.emitLabel(lN) } else if (ch.type === 'DEFAULT') { this.emitComment('default'); for (const dc of ch.children) { if (dc.type === 'BREAK') this.emit('goto', '', '', lE); else this.visit(dc) } } } this.emitLabel(lE); return '' }
+          case 'BLOCK': for (const ch of node.children) this.visit(ch); return '';
+          default: for (const ch of node.children) this.visit(ch); return ''
+        }
+      }
+
+      visitExpr(node) {
+        if (!node) return ''; switch (node.type) {
+          case 'INT': case 'FLOAT': case 'BOOL': case 'NONE': return node.value; case 'STRING': return node.value; case 'ID': return node.value;
+          case 'ASSIGN': { const left = node.children[0] ? this.visitExpr(node.children[0]) : ''; const right = node.children[1] ? this.visitExpr(node.children[1]) : ''; if (node.value === '=') this.emit('=', right, '', left); else { const op = node.value.replace('=', ''); const t = this.newTemp(); this.emit(op, left, right, t); this.emit('=', t, '', left) } return left }
+          case 'BIN_OP': case 'LOG_AND': case 'LOG_OR': case 'EQUALITY': case 'RELATIONAL': { const left = node.children[0] ? this.visitExpr(node.children[0]) : ''; const right = node.children[1] ? this.visitExpr(node.children[1]) : ''; const t = this.newTemp(); this.emit(node.value, left, right, t); return t }
+          case 'UNARY': { const operand = node.children[0] ? this.visitExpr(node.children[0]) : ''; const t = this.newTemp(); this.emit('unary_' + node.value, operand, '', t); return t }
+          case 'PREFIX': { const operand = node.children[0] ? this.visitExpr(node.children[0]) : ''; const t = this.newTemp(); const op = node.value === '++' ? '+' : '-'; this.emit(op, operand, '1', t); this.emit('=', t, '', operand); return operand }
+          case 'POSTFIX': { const operand = node.children[0] ? this.visitExpr(node.children[0]) : ''; const t = this.newTemp(); this.emit('=', operand, '', t); const op = node.value === '++' ? '+' : '-'; const t2 = this.newTemp(); this.emit(op, operand, '1', t2); this.emit('=', t2, '', operand); return t }
+          case 'CALL': { const callee = node.children[0] ? this.visitExpr(node.children[0]) : 'unknown'; const argsNode = node.children[1]; const argVals = []; if (argsNode) for (const a of argsNode.children) argVals.push(this.visitExpr(a)); for (const av of argVals) this.emit('push_arg', av); const t = this.newTemp(); this.emit('call', callee, argVals.length, t); return t }
+          case 'INDEX': { const arr = node.children[0] ? this.visitExpr(node.children[0]) : ''; const idx = node.children[1] ? this.visitExpr(node.children[1]) : ''; const t = this.newTemp(); this.emit('index', arr, idx, t); return t }
+          case 'DOT': case 'ARROW': { const obj = node.children[0] ? this.visitExpr(node.children[0]) : ''; const mem = node.children[1] ? node.children[1].value : ''; const t = this.newTemp(); this.emit(node.type === 'DOT' ? '.' : '->', obj, mem, t); return t }
+          case 'GROUP': return node.children[0] ? this.visitExpr(node.children[0]) : '';
+          case 'TERNARY': { const cond = node.children[0] ? this.visitExpr(node.children[0]) : ''; const lF = this.newLabel(), lE = this.newLabel(); const t = this.newTemp(); this.emit('if_false', cond, '', lF); const tv = node.children[1] ? this.visitExpr(node.children[1]) : ''; this.emit('=', tv, '', t); this.emit('goto', '', '', lE); this.emitLabel(lF); const fv = node.children[2] ? this.visitExpr(node.children[2]) : ''; this.emit('=', fv, '', t); this.emitLabel(lE); return t }
+          case 'LIST': { const t = this.newTemp(); this.emit('alloc_list', node.children.length, '', t); node.children.forEach((el, i) => { const v = this.visitExpr(el); this.emit('list_set', t, i, v) }); return t }
+          default: if (node.children.length) return this.visitExpr(node.children[0]); return node.value || ''
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 5: OPTIMIZER
+    // ═══════════════════════════════════════════════════════════
+    class Optimizer {
+      constructor(instructions) { this.original = [...instructions]; this.instr = instructions.map(i => ({ ...i })); this.log = [] }
+      optimize() { this.constantFolding(); this.constantPropagation(); this.strengthReduction(); this.deadCodeElimination(); return { optimized: this.instr.filter(i => !i._removed), log: this.log, originalCount: this.original.filter(i => i.op !== 'label' && i.op !== 'comment').length, optimizedCount: this.instr.filter(i => !i._removed && i.op !== 'label' && i.op !== 'comment').length } }
+      constantFolding() { const ops = { '+': 1, '-': 1, '*': 1, '/': 1, '%': 1, '<': 1, '>': 1, '<=': 1, '>=': 1, '==': 1, '!=': 1 }; for (const inst of this.instr) { if (inst._removed || !ops[inst.op]) continue; const a = parseFloat(inst.arg1), b = parseFloat(inst.arg2); if (isNaN(a) || isNaN(b)) continue; let r; switch (inst.op) { case '+': r = a + b; break; case '-': r = a - b; break; case '*': r = a * b; break; case '/': if (b === 0) continue; r = Math.trunc(a / b); break; case '%': if (b === 0) continue; r = a % b; break; case '<': r = a < b ? 1 : 0; break; case '>': r = a > b ? 1 : 0; break; case '<=': r = a <= b ? 1 : 0; break; case '>=': r = a >= b ? 1 : 0; break; case '==': r = a === b ? 1 : 0; break; case '!=': r = a !== b ? 1 : 0; break; default: continue }this.log.push({ type: 'fold', desc: `${inst.arg1} ${inst.op} ${inst.arg2} → ${r}` }); inst.op = '='; inst.arg1 = String(r); inst.arg2 = '' } }
+      constantPropagation() { const consts = {}; for (const inst of this.instr) { if (inst._removed) continue; if (inst.op === '=' && inst.arg2 === '' && /^-?\d+(\.\d+)?$/.test(inst.arg1)) { consts[inst.result] = inst.arg1 } else { if (inst.arg1 && consts[inst.arg1]) { this.log.push({ type: 'prop', desc: `${inst.arg1} → ${consts[inst.arg1]}` }); inst.arg1 = consts[inst.arg1] } if (inst.arg2 && consts[inst.arg2]) { this.log.push({ type: 'prop', desc: `${inst.arg2} → ${consts[inst.arg2]}` }); inst.arg2 = consts[inst.arg2] } if (inst.result && inst.op !== '=' && consts[inst.result]) delete consts[inst.result] } } }
+      strengthReduction() { for (const inst of this.instr) { if (inst._removed || inst.op !== '*') continue; const a1 = parseInt(inst.arg1), a2 = parseInt(inst.arg2); if (a2 === 2 || a2 === 4 || a2 === 8) { const shift = a2 === 2 ? 1 : a2 === 4 ? 2 : 3; this.log.push({ type: 'strength', desc: `${inst.arg1} * ${a2} → ${inst.arg1} << ${shift}` }); inst.op = '<<'; inst.arg2 = String(shift) } else if (a1 === 2 || a1 === 4 || a1 === 8) { const shift = a1 === 2 ? 1 : a1 === 4 ? 2 : 3; this.log.push({ type: 'strength', desc: `${a1} * ${inst.arg2} → ${inst.arg2} << ${shift}` }); inst.op = '<<'; inst.arg1 = inst.arg2; inst.arg2 = String(shift) } } }
+      deadCodeElimination() { const used = new Set(); for (const inst of this.instr) { if (inst._removed) continue; if (inst.arg1) used.add(inst.arg1); if (inst.arg2) used.add(inst.arg2) } for (const inst of this.instr) { if (inst._removed || inst.op === 'label' || inst.op === 'comment' || inst.op === 'call' || inst.op === 'push_arg' || inst.op === 'return' || inst.op === 'if_false' || inst.op === 'if_true' || inst.op === 'goto' || inst.op === 'begin_func' || inst.op === 'end_func' || inst.op === 'param') continue; if (inst.result && /^t\d+$/.test(inst.result) && !used.has(inst.result)) { this.log.push({ type: 'dead', desc: `Removed unused: ${inst.result}` }); inst._removed = true } } }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 6: TARGET CODE GENERATOR
+    // ═══════════════════════════════════════════════════════════
+    class TargetCodeGenerator {
+      constructor(tacInstr, symbols) { this.tac = tacInstr.filter(i => !i._removed); this.symbols = symbols; this.asm = []; this.regMap = {}; this.regPool = ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi']; this.regUsed = {}; this.nextReg = 0; this.stringLiterals = {}; this.strCount = 0; this.instrCounts = { mov: 0, add: 0, sub: 0, imul: 0, idiv: 0, cmp: 0, jmp: 0, jcc: 0, push: 0, pop: 0, call: 0, ret: 0, shl: 0, shr: 0, xor: 0, neg: 0, other: 0 } }
+      allocReg(name) { if (this.regMap[name]) return this.regMap[name]; if (this.nextReg < this.regPool.length) { const r = this.regPool[this.nextReg++]; this.regMap[name] = r; this.regUsed[r] = name; return r } const r = this.regPool[0]; const old = this.regUsed[r]; if (old) { this.emitAsm('push', r, '', `; spill ${old}`); this.instrCounts.push++; delete this.regMap[old] } this.regMap[name] = r; this.regUsed[r] = name; return r }
+      getOperand(val) { if (!val) return '0'; if (/^-?\d+(\.\d+)?$/.test(val)) return val; if (val.startsWith('"') || val.startsWith("'")) { if (!this.stringLiterals[val]) this.stringLiterals[val] = `str_${this.strCount++}`; return this.stringLiterals[val] } if (this.regMap[val]) return this.regMap[val]; return `[${val}]` }
+      emitAsm(instr, op1 = '', op2 = '', comment = '') { this.asm.push({ instr, op1, op2, comment }) }
+      emitLabel(label) { this.asm.push({ label }) } emitSection(text) { this.asm.push({ section: text }) } emitDirective(text) { this.asm.push({ directive: text }) } emitComment(text) { this.asm.push({ asmComment: text }) }
+      generate() {
+        this.emitSection('.data');
+        for (const inst of this.tac) { if (inst.arg1 && (inst.arg1.startsWith('"') || inst.arg1.startsWith("'"))) { if (!this.stringLiterals[inst.arg1]) this.stringLiterals[inst.arg1] = `str_${this.strCount++}` } if (inst.arg2 && (inst.arg2.startsWith('"') || inst.arg2.startsWith("'"))) { if (!this.stringLiterals[inst.arg2]) this.stringLiterals[inst.arg2] = `str_${this.strCount++}` } }
+        for (const [str, lbl] of Object.entries(this.stringLiterals)) this.emitDirective(`${lbl}: db ${str}, 0`);
+        this.emitSection('.bss'); const dv = new Set(); for (const inst of this.tac) { if (inst.op === '=' && inst.result && !inst.result.match(/^t\d+$/) && !dv.has(inst.result)) { this.emitDirective(`${inst.result}: resd 1`); dv.add(inst.result) } }
+        this.emitSection('.text'); this.emitDirective('global _start');
+        for (const inst of this.tac) this.translateInstruction(inst);
+        return { assembly: this.asm, regMap: { ...this.regMap }, instrCounts: this.instrCounts, stringLiterals: this.stringLiterals, totalInstructions: this.asm.filter(a => a.instr).length }
+      }
+      translateInstruction(inst) {
+        if (inst.op === 'label') { this.emitLabel(inst.label); return } if (inst.op === 'comment') { this.emitComment(inst.comment); return }
+        switch (inst.op) {
+          case '=': { const src = this.getOperand(inst.arg1), dst = this.allocReg(inst.result); this.emitAsm('mov', dst, src, `; ${inst.result} = ${inst.arg1}`); this.instrCounts.mov++; break }
+          case '+': { const r = this.allocReg(inst.result); this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} + ${inst.arg2}`); this.emitAsm('add', r, this.getOperand(inst.arg2)); this.instrCounts.mov++; this.instrCounts.add++; break }
+          case '-': { const r = this.allocReg(inst.result); this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} - ${inst.arg2}`); this.emitAsm('sub', r, this.getOperand(inst.arg2)); this.instrCounts.mov++; this.instrCounts.sub++; break }
+          case '*': { const r = this.allocReg(inst.result); this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} * ${inst.arg2}`); this.emitAsm('imul', r, this.getOperand(inst.arg2)); this.instrCounts.mov++; this.instrCounts.imul++; break }
+          case '/': { this.emitAsm('mov', 'eax', this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} / ${inst.arg2}`); this.emitAsm('xor', 'edx', 'edx'); this.emitAsm('mov', 'ecx', this.getOperand(inst.arg2)); this.emitAsm('idiv', 'ecx'); const r = this.allocReg(inst.result); if (r !== 'eax') this.emitAsm('mov', r, 'eax'); this.instrCounts.mov += 2; this.instrCounts.xor++; this.instrCounts.idiv++; break }
+          case '%': { this.emitAsm('mov', 'eax', this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} % ${inst.arg2}`); this.emitAsm('xor', 'edx', 'edx'); this.emitAsm('mov', 'ecx', this.getOperand(inst.arg2)); this.emitAsm('idiv', 'ecx'); const r = this.allocReg(inst.result); this.emitAsm('mov', r, 'edx'); this.instrCounts.mov += 3; this.instrCounts.xor++; this.instrCounts.idiv++; break }
+          case '<<': { const r = this.allocReg(inst.result); this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} << ${inst.arg2}`); this.emitAsm('shl', r, inst.arg2); this.instrCounts.mov++; this.instrCounts.shl++; break }
+          case '>>': { const r = this.allocReg(inst.result); this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} >> ${inst.arg2}`); this.emitAsm('shr', r, inst.arg2); this.instrCounts.mov++; this.instrCounts.shr++; break }
+          case '<': case '>': case '<=': case '>=': case '==': case '!=': { const jmpMap = { '<': 'jl', '>': 'jg', '<=': 'jle', '>=': 'jge', '==': 'je', '!=': 'jne' }; const r = this.allocReg(inst.result); this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} ${inst.op} ${inst.arg2}`); this.emitAsm('cmp', r, this.getOperand(inst.arg2)); const lT = `_ct${this.asm.length}`, lE = `_ce${this.asm.length}`; this.emitAsm(jmpMap[inst.op] || 'je', lT); this.emitAsm('mov', r, '0'); this.emitAsm('jmp', lE); this.emitLabel(lT); this.emitAsm('mov', r, '1'); this.emitLabel(lE); this.instrCounts.mov += 3; this.instrCounts.cmp++; this.instrCounts.jcc++; this.instrCounts.jmp++; break }
+          case '&&': { const r = this.allocReg(inst.result); const lF = `_af${this.asm.length}`, lE = `_ae${this.asm.length}`; this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} && ${inst.arg2}`); this.emitAsm('cmp', r, '0'); this.emitAsm('je', lF); this.emitAsm('mov', r, this.getOperand(inst.arg2)); this.emitAsm('cmp', r, '0'); this.emitAsm('je', lF); this.emitAsm('mov', r, '1'); this.emitAsm('jmp', lE); this.emitLabel(lF); this.emitAsm('mov', r, '0'); this.emitLabel(lE); this.instrCounts.mov += 4; this.instrCounts.cmp += 2; this.instrCounts.jcc += 2; this.instrCounts.jmp++; break }
+          case '||': { const r = this.allocReg(inst.result); const lT = `_ot${this.asm.length}`, lE = `_oe${this.asm.length}`; this.emitAsm('mov', r, this.getOperand(inst.arg1), `; ${inst.result} = ${inst.arg1} || ${inst.arg2}`); this.emitAsm('cmp', r, '0'); this.emitAsm('jne', lT); this.emitAsm('mov', r, this.getOperand(inst.arg2)); this.emitAsm('cmp', r, '0'); this.emitAsm('jne', lT); this.emitAsm('mov', r, '0'); this.emitAsm('jmp', lE); this.emitLabel(lT); this.emitAsm('mov', r, '1'); this.emitLabel(lE); this.instrCounts.mov += 4; this.instrCounts.cmp += 2; this.instrCounts.jcc += 2; this.instrCounts.jmp++; break }
+          case 'if_false': { this.emitAsm('cmp', this.getOperand(inst.arg1), '0', `; if_false ${inst.arg1} goto ${inst.result}`); this.emitAsm('je', inst.result); this.instrCounts.cmp++; this.instrCounts.jcc++; break }
+          case 'if_true': { this.emitAsm('cmp', this.getOperand(inst.arg1), '0', `; if_true ${inst.arg1} goto ${inst.result}`); this.emitAsm('jne', inst.result); this.instrCounts.cmp++; this.instrCounts.jcc++; break }
+          case 'goto': { this.emitAsm('jmp', inst.result, '', `; goto ${inst.result}`); this.instrCounts.jmp++; break }
+          case 'return': { if (inst.arg1) { this.emitAsm('mov', 'eax', this.getOperand(inst.arg1), `; return ${inst.arg1}`); this.instrCounts.mov++ } this.emitAsm('ret'); this.instrCounts.ret++; break }
+          case 'begin_func': { this.emitAsm('push', 'ebp', '', `; begin ${inst.arg1}`); this.emitAsm('mov', 'ebp', 'esp'); this.instrCounts.push++; this.instrCounts.mov++; break }
+          case 'end_func': { this.emitAsm('mov', 'esp', 'ebp', `; end ${inst.arg1}`); this.emitAsm('pop', 'ebp'); this.emitAsm('ret'); this.instrCounts.mov++; this.instrCounts.pop++; this.instrCounts.ret++; break }
+          case 'push_arg': { this.emitAsm('push', this.getOperand(inst.arg1), '', `; arg ${inst.arg1}`); this.instrCounts.push++; break }
+          case 'call': { this.emitAsm('call', inst.arg1, '', `; ${inst.result} = call ${inst.arg1}(${inst.arg2})`); if (inst.arg2 && parseInt(inst.arg2) > 0) { this.emitAsm('add', 'esp', `${parseInt(inst.arg2) * 4}`); this.instrCounts.add++ } if (inst.result) { const r = this.allocReg(inst.result); if (r !== 'eax') { this.emitAsm('mov', r, 'eax'); this.instrCounts.mov++ } } this.instrCounts.call++; break }
+          case 'param': { this.emitAsm('mov', this.allocReg(inst.arg1), `[ebp+${8 + parseInt(inst.result.replace('arg', '')) * 4}]`, `; param ${inst.arg1}`); this.instrCounts.mov++; break }
+          default: { if (inst.op.startsWith('unary_')) { const op = inst.op.replace('unary_', ''); const r = this.allocReg(inst.result); if (op === '-') { this.emitAsm('mov', r, this.getOperand(inst.arg1), `; -${inst.arg1}`); this.emitAsm('neg', r); this.instrCounts.mov++; this.instrCounts.neg++ } else if (op === '!') { this.emitAsm('mov', r, this.getOperand(inst.arg1), `; !${inst.arg1}`); this.emitAsm('cmp', r, '0'); const lT = `_nt${this.asm.length}`, lE = `_ne${this.asm.length}`; this.emitAsm('je', lT); this.emitAsm('mov', r, '0'); this.emitAsm('jmp', lE); this.emitLabel(lT); this.emitAsm('mov', r, '1'); this.emitLabel(lE); this.instrCounts.mov += 3; this.instrCounts.cmp++; this.instrCounts.jcc++; this.instrCounts.jmp++ } else { this.emitAsm('mov', r, this.getOperand(inst.arg1)); this.instrCounts.mov++ } } else { this.emitComment(`Unhandled: ${inst.op} ${inst.arg1} ${inst.arg2} -> ${inst.result}`); this.instrCounts.other++ } break }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PHASE 7: INTERPRETER (Program Output)
+    // ═══════════════════════════════════════════════════════════
+    class Interpreter {
+      constructor(ast) { this.ast = ast; this.output = []; this.env = {}; this.functions = {}; this.callDepth = 0; this.maxCallDepth = 500; this.stepCount = 0; this.maxSteps = 50000; this.hasError = false; this.exitCode = null }
+
+      run() {
+        try {
+          // First pass: collect function definitions
+          for (const ch of this.ast.children) {
+            if (ch.type === 'FUNC_DEF') this.functions[ch.value] = ch;
+          }
+          // Execute top-level statements or main
+          if (this.functions['main']) {
+            this.exitCode = this.execFunc('main', []);
+          } else {
+            for (const ch of this.ast.children) {
+              if (ch.type === 'FUNC_DEF' || ch.type === 'PREPROCESSOR' || ch.type === 'CLASS_DEF' || ch.type === 'IMPORT') continue;
+              this.execStmt(ch, this.env);
+            }
+          }
+        } catch (e) {
+          if (e.message !== '__RETURN__' && e.message !== '__BREAK__' && e.message !== '__CONTINUE__') {
+            this.output.push({ type: 'error', text: `Runtime Error: ${e.message}` }); this.hasError = true;
+          }
+        }
+        return { output: this.output, hasError: this.hasError, exitCode: this.exitCode }
+      }
+
+      step() { if (++this.stepCount > this.maxSteps) throw new Error('Execution limit exceeded (infinite loop?)') }
+
+      execFunc(name, args) {
+        if (this.callDepth++ > this.maxCallDepth) throw new Error(`Stack overflow: max recursion depth (${this.maxCallDepth}) exceeded`);
+        const func = this.functions[name];
+        if (!func) {
+          // Built-in functions
+          if (name === 'printf' || name === 'print') { this.builtinPrint(args); this.callDepth--; return 0 }
+          if (name === 'factorial') { const n = this.toNum(args[0]); if (n <= 1) return 1; const r = this.execFunc('factorial', [n - 1]); this.callDepth--; return n * r }
+          if (name === 'abs') { this.callDepth--; return Math.abs(this.toNum(args[0])) }
+          if (name === 'len') { this.callDepth--; return Array.isArray(args[0]) ? args[0].length : String(args[0]).length }
+          if (name === 'range') { this.callDepth--; const n = this.toNum(args[0] || 0); const r = []; for (let i = 0; i < n; i++)r.push(i); return r }
+          if (name === 'str') { this.callDepth--; return String(args[0]) }
+          if (name === 'int') { this.callDepth--; return parseInt(args[0]) || 0 }
+          if (name === 'float') { this.callDepth--; return parseFloat(args[0]) || 0 }
+          if (name === 'input') { this.callDepth--; return '<user_input>' }
+          if (name === 'open') { this.callDepth--; return '<file_handle>' }
+          if (name === 'type') { this.callDepth--; return typeof args[0] }
+          if (name === 'max') { this.callDepth--; return Math.max(...args.map(a => this.toNum(a))) }
+          if (name === 'min') { this.callDepth--; return Math.min(...args.map(a => this.toNum(a))) }
+          this.output.push({ type: 'info', text: `[call] ${name}(${args.map(a => this.formatVal(a)).join(', ')})` });
+          this.callDepth--; return 0;
+        }
+        const localEnv = { ...this.env };
+        const params = func.children.find(c => c.type === 'PARAMETERS');
+        if (params) {
+          params.children.forEach((p, i) => {
+            const nameNode = p.children ? p.children.find(c => c.type === 'NAME') : null;
+            const pname = nameNode ? nameNode.value : (p.value || `param${i}`);
+            localEnv[pname] = i < args.length ? args[i] : 0;
+          })
+        }
+        const block = func.children.find(c => c.type === 'BLOCK');
+        let retVal = 0;
+        try { if (block) for (const ch of block.children) this.execStmt(ch, localEnv) }
+        catch (e) { if (e.message === '__RETURN__') retVal = e.value; else throw e }
+        this.callDepth--; return retVal;
+      }
+
+      builtinPrint(args) {
+        if (args.length === 0) { this.output.push({ type: 'line', text: '' }); return }
+        let fmt = String(args[0]);
+        // Handle C-style printf format strings
+        if (typeof args[0] === 'string' && (fmt.startsWith('"') || fmt.startsWith("'"))) {
+          fmt = fmt.slice(1, -1);
+          let ai = 1;
+          fmt = fmt.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+          fmt = fmt.replace(/%[diouxXeEfgGcs%]/g, (m) => {
+            if (m === '%%') return '%'; if (ai < args.length) return this.formatVal(args[ai++]); return m;
+          });
+          // Split by newline and output each line
+          const lines = fmt.split('\n');
+          lines.forEach((line, i) => {
+            if (i < lines.length - 1 || line.length > 0)
+              this.output.push({ type: 'line', text: line });
+          });
+        } else {
+          // Python-style print
+          const text = args.map(a => this.formatVal(a)).join(' ');
+          this.output.push({ type: 'line', text });
+        }
+      }
+
+      formatVal(v) {
+        if (v === null || v === undefined) return 'None';
+        if (typeof v === 'string') {
+          if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) return v.slice(1, -1).replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\\\/g, '\\');
+          return v;
+        }
+        if (typeof v === 'boolean') return v ? 'True' : 'False';
+        if (Array.isArray(v)) return '[' + v.map(x => this.formatVal(x)).join(', ') + ']';
+        return String(v);
+      }
+
+      toNum(v) { if (typeof v === 'number') return v; if (typeof v === 'boolean') return v ? 1 : 0; if (typeof v === 'string') { const n = parseFloat(v); return isNaN(n) ? 0 : n } return 0 }
+      toBool(v) { if (typeof v === 'number') return v !== 0; if (typeof v === 'boolean') return v; if (typeof v === 'string') return v.length > 0 && v !== '0' && v !== 'False' && v !== 'None' && v !== '""' && v !== "''"; if (Array.isArray(v)) return v.length > 0; return !!v }
+
+      execStmt(node, env) {
+        this.step(); if (!node) return;
+        switch (node.type) {
+          case 'VAR_DECL': { for (const ch of node.children) if (ch.type === 'VARIABLE') { const init = ch.children.find(c => c.type === 'INITIALIZER'); env[ch.value] = init && init.children[0] ? this.evalExpr(init.children[0], env) : 0 } break }
+          case 'EXPR_STMT': if (node.children[0]) this.evalExpr(node.children[0], env); break;
+          case 'RETURN': { const val = node.children[0] ? this.evalExpr(node.children[0], env) : 0; const e = new Error('__RETURN__'); e.value = val; throw e }
+          case 'IF': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const elseNode = node.children.find(c => c.type === 'ELSE'); const elseIfNode = node.children.find(c => c.type === 'ELSE_IF'); let cond = false; if (condNode && condNode.children[0]) cond = this.toBool(this.evalExpr(condNode.children[0], env)); if (cond) { if (block) for (const ch of (block.children || [])) this.execStmt(ch, env) } else if (elseIfNode) { for (const ch of elseIfNode.children) this.execStmt(ch, env) } else if (elseNode) { for (const ch of elseNode.children) this.execStmt(ch, env) } break }
+          case 'ELIF': { const condNode = node.children.find(c => c.type === 'CONDITION'); const body = node.children.find(c => c.type === 'BODY' || c.type === 'BLOCK'); let cond = false; if (condNode && condNode.children[0]) cond = this.toBool(this.evalExpr(condNode.children[0], env)); if (cond && body) for (const ch of (body.children || [])) this.execStmt(ch, env); break }
+          case 'WHILE': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); while (true) { this.step(); let cond = false; if (condNode && condNode.children[0]) cond = this.toBool(this.evalExpr(condNode.children[0], env)); if (!cond) break; try { if (block) for (const ch of (block.children || [])) this.execStmt(ch, env) } catch (e) { if (e.message === '__BREAK__') break; if (e.message === '__CONTINUE__') continue; throw e } } break }
+          case 'DO_WHILE': { const condNode = node.children.find(c => c.type === 'CONDITION'); const block = node.children.find(c => c.type === 'BLOCK'); do { this.step(); try { if (block) for (const ch of block.children) this.execStmt(ch, env) } catch (e) { if (e.message === '__BREAK__') break; if (e.message === '__CONTINUE__') continue; throw e } let cond = false; if (condNode && condNode.children[0]) cond = this.toBool(this.evalExpr(condNode.children[0], env)); if (!cond) break } while (true); break }
+          case 'FOR': {
+            const initNode = node.children.find(c => c.type === 'INIT'); const condNode = node.children.find(c => c.type === 'CONDITION'); const updNode = node.children.find(c => c.type === 'UPDATE'); const block = node.children.find(c => c.type === 'BLOCK' || c.type === 'BODY'); const iterNode = node.children.find(c => c.type === 'ITERATOR'); const iterableNode = node.children.find(c => c.type === 'ITERABLE');
+            if (iterNode && iterableNode) {
+              // Python-style for
+              const iterable = iterableNode.children[0] ? this.evalExpr(iterableNode.children[0], env) : [];
+              const arr = Array.isArray(iterable) ? iterable : [];
+              for (const val of arr) { this.step(); env[iterNode.value] = val; try { if (block) for (const ch of (block.children || [])) this.execStmt(ch, env) } catch (e) { if (e.message === '__BREAK__') break; if (e.message === '__CONTINUE__') continue; throw e } }
+            } else {
+              // C-style for
+              if (initNode) for (const ch of initNode.children) { if (ch.type === 'VAR_DECL') this.execStmt(ch, env); else this.evalExpr(ch, env) }
+              while (true) { this.step(); let cond = true; if (condNode && condNode.children[0]) cond = this.toBool(this.evalExpr(condNode.children[0], env)); if (!cond) break; try { if (block) for (const ch of (block.children || [])) this.execStmt(ch, env) } catch (e) { if (e.message === '__BREAK__') break; if (e.message === '__CONTINUE__') continue; throw e } if (updNode && updNode.children[0]) this.evalExpr(updNode.children[0], env) }
+            } break
+          }
+          case 'SWITCH': { const exprNode = node.children.find(c => c.type === 'SWITCH_EXPR'); const sv = exprNode && exprNode.children[0] ? this.evalExpr(exprNode.children[0], env) : 0; let matched = false, fell = false; try { for (const ch of node.children) { if (ch.type === 'CASE') { const cv = ch.children[0] ? this.evalExpr(ch.children[0], env) : null; if (!matched && !fell) { if (sv === cv || sv == cv) { matched = true } } if (matched || fell) { fell = true; for (let i = 1; i < ch.children.length; i++) { if (ch.children[i].type === 'BREAK') throw new Error('__BREAK__'); this.execStmt(ch.children[i], env) } } } else if (ch.type === 'DEFAULT') { if (!matched) { fell = true; for (const dc of ch.children) { if (dc.type === 'BREAK') throw new Error('__BREAK__'); this.execStmt(dc, env) } } } } } catch (e) { if (e.message !== '__BREAK__') throw e } break }
+          case 'BREAK': throw new Error('__BREAK__');
+          case 'CONTINUE': throw new Error('__CONTINUE__');
+          case 'BLOCK': for (const ch of node.children) this.execStmt(ch, env); break;
+          case 'FUNC_DEF': this.functions[node.value] = node; break;
+          case 'TRY': case 'EXCEPT': case 'FINALLY': case 'PASS': break;
+          case 'RAISE': { const msg = node.children[0] ? this.formatVal(this.evalExpr(node.children[0], env)) : 'Exception'; this.output.push({ type: 'error', text: `Exception: ${msg}` }); break }
+          default: for (const ch of node.children) this.execStmt(ch, env)
+        }
+      }
+
+      evalExpr(node, env) {
+        this.step(); if (!node) return 0;
+        switch (node.type) {
+          case 'INT': return parseInt(node.value) || 0;
+          case 'FLOAT': return parseFloat(node.value) || 0;
+          case 'STRING': return node.value;
+          case 'BOOL': return node.value === 'True';
+          case 'NONE': return null;
+          case 'ID': { if (node.value in env) return env[node.value]; if (this.functions[node.value]) return node.value; return node.value }
+          case 'ASSIGN': { const right = node.children[1] ? this.evalExpr(node.children[1], env) : 0; const left = node.children[0]; if (left && left.type === 'ID') { if (node.value === '=') env[left.value] = right; else if (node.value === '+=') env[left.value] = (this.toNum(env[left.value] || 0)) + this.toNum(right); else if (node.value === '-=') env[left.value] = (this.toNum(env[left.value] || 0)) - this.toNum(right); else if (node.value === '*=') env[left.value] = (this.toNum(env[left.value] || 0)) * this.toNum(right); else if (node.value === '/=') { const d = this.toNum(right); if (d === 0) { this.output.push({ type: 'error', text: 'Division by zero' }); this.hasError = true; return 0 } env[left.value] = Math.trunc(this.toNum(env[left.value] || 0) / d) } return env[left.value] } return right }
+          case 'BIN_OP': {
+            const l = this.evalExpr(node.children[0], env), r = this.evalExpr(node.children[1], env); const ln = this.toNum(l), rn = this.toNum(r);
+            if (node.value === '+' && (typeof l === 'string' || typeof r === 'string')) return this.formatVal(l) + this.formatVal(r);
+            switch (node.value) { case '+': return ln + rn; case '-': return ln - rn; case '*': return ln * rn; case '/': if (rn === 0) { this.output.push({ type: 'error', text: 'Division by zero' }); this.hasError = true; return 0 } return Math.trunc(ln / rn); case '%': if (rn === 0) { this.output.push({ type: 'error', text: 'Modulo by zero' }); this.hasError = true; return 0 } return ln % rn; case '//': if (rn === 0) { this.output.push({ type: 'error', text: 'Division by zero' }); this.hasError = true; return 0 } return Math.floor(ln / rn); case '**': return Math.pow(ln, rn); default: return 0 }
+          }
+          case 'RELATIONAL': { const l = this.evalExpr(node.children[0], env), r = this.evalExpr(node.children[1], env); const ln = this.toNum(l), rn = this.toNum(r); switch (node.value) { case '<': return ln < rn ? 1 : 0; case '>': return ln > rn ? 1 : 0; case '<=': return ln <= rn ? 1 : 0; case '>=': return ln >= rn ? 1 : 0; default: return 0 } }
+          case 'EQUALITY': { const l = this.evalExpr(node.children[0], env), r = this.evalExpr(node.children[1], env); if (node.value === '==') return l == r ? 1 : 0; if (node.value === '!=') return l != r ? 1 : 0; return 0 }
+          case 'LOG_AND': { const l = this.evalExpr(node.children[0], env); if (!this.toBool(l)) return 0; return this.toBool(this.evalExpr(node.children[1], env)) ? 1 : 0 }
+          case 'LOG_OR': { const l = this.evalExpr(node.children[0], env); if (this.toBool(l)) return 1; return this.toBool(this.evalExpr(node.children[1], env)) ? 1 : 0 }
+          case 'UNARY': { const o = this.evalExpr(node.children[0], env); if (node.value === '-') return -this.toNum(o); if (node.value === '!') return this.toBool(o) ? 0 : 1; if (node.value === 'not') return this.toBool(o) ? 0 : 1; if (node.value === '+') return this.toNum(o); return o }
+          case 'PREFIX': { const name = node.children[0] && node.children[0].type === 'ID' ? node.children[0].value : null; if (name && name in env) { if (node.value === '++') env[name] = this.toNum(env[name]) + 1; else env[name] = this.toNum(env[name]) - 1; return env[name] } return 0 }
+          case 'POSTFIX': { const name = node.children[0] && node.children[0].type === 'ID' ? node.children[0].value : null; if (name && name in env) { const old = this.toNum(env[name]); if (node.value === '++') env[name] = old + 1; else env[name] = old - 1; return old } return 0 }
+          case 'CALL': { const callee = node.children[0]; const argsNode = node.children[1]; const args = []; if (argsNode) for (const a of argsNode.children) args.push(this.evalExpr(a, env)); const fname = callee ? this.evalExpr(callee, env) : 'unknown'; if (typeof fname === 'string') return this.execFunc(fname, args); return 0 }
+          case 'GROUP': return node.children[0] ? this.evalExpr(node.children[0], env) : 0;
+          case 'TERNARY': { const cond = this.toBool(this.evalExpr(node.children[0], env)); return cond ? this.evalExpr(node.children[1], env) : this.evalExpr(node.children[2], env) }
+          case 'INDEX': { const arr = this.evalExpr(node.children[0], env); const idx = this.toNum(this.evalExpr(node.children[1], env)); if (Array.isArray(arr)) return arr[idx] || 0; return 0 }
+          case 'DOT': case 'ARROW': { return 0 }
+          case 'LIST': { return node.children.map(ch => this.evalExpr(ch, env)) }
+          default: if (node.children.length) return this.evalExpr(node.children[0], env); return node.value || 0
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  RENDERING
+    // ═══════════════════════════════════════════════════════════
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+    function renderTokens(tokens) {
+      const tbody = document.getElementById('token-tbody'), summary = document.getElementById('token-summary'); tbody.innerHTML = ''; summary.innerHTML = '';
+      const filtered = tokens.filter(t => t.type !== 'NEWLINE' && t.type !== 'COMMENT');
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No tokens.</td></tr>'; return }
+      const counts = {}; filtered.forEach(t => counts[t.type] = (counts[t.type] || 0) + 1);
+      Object.entries(counts).sort().forEach(([type, cnt]) => { const s = document.createElement('span'); s.className = 'badge ' + type; s.textContent = `${type}: ${cnt}`; summary.appendChild(s) });
+      filtered.forEach((t, i) => { const tr = document.createElement('tr'); tr.innerHTML = `<td style="color:var(--muted)">${i + 1}</td><td><span class="badge ${t.type}" style="font-size:10px">${esc(t.type)}</span></td><td class="val">${esc(t.value)}</td><td>${t.line}</td><td>${t.column}</td>`; tbody.appendChild(tr) })
+    }
+
+    function renderAST(node, container) {
+      container.innerHTML = '';
+      function buildInto(node, indent, isLast, prefix, parent) {
+        const div = document.createElement('div'); div.className = 'ast-node';
+        let connector = indent === 0 ? '' : (isLast ? '└── ' : '├── '); let newPrefix = indent === 0 ? '' : (prefix + (isLast ? '    ' : '│   '));
+        const val = node.value ? ` : <span class="ast-value">${esc(String(node.value))}</span>` : '';
+        const loc = node.line > 0 ? `  <span class="ast-loc">[${node.line}:${node.column}]</span>` : '';
+        const hasChildren = node.children.length > 0;
+        const arrow = hasChildren ? '<span class="ast-arrow" style="color:#555;margin-right:2px">▼</span>' : '';
+        div.innerHTML = `<span class="ast-connector">${esc(prefix)}${esc(connector)}</span>${arrow}<span class="ast-type">${esc(node.type)}</span>${val}${loc}`;
+        parent.appendChild(div);
+        if (hasChildren) { div.classList.add('ast-toggle'); const cc = document.createElement('div'); parent.appendChild(cc); node.children.forEach((ch, i) => buildInto(ch, indent + 1, i === node.children.length - 1, newPrefix, cc)); div.addEventListener('click', function (e) { e.stopPropagation(); const a = this.querySelector('.ast-arrow'); const n = this.nextElementSibling; if (n && n.style.display === 'none') { n.style.display = ''; if (a) a.textContent = '▼' } else if (n) { n.style.display = 'none'; if (a) a.textContent = '▶' } }) }
+      }
+      buildInto(node, 0, true, '', container)
+    }
+
+    function renderSemantic(semResult) {
+      const tbody = document.getElementById('sym-tbody'); tbody.innerHTML = '';
+      if (!semResult.symbols.length) tbody.innerHTML = '<tr><td colspan="5" class="empty">No symbols.</td></tr>';
+      else semResult.symbols.forEach(s => { const tr = document.createElement('tr'); tr.innerHTML = `<td class="val">${esc(s.name)}</td><td>${esc(s.type)}</td><td style="color:var(--purple)">${esc(s.scope)}</td><td>${s.initialized ? '<span style="color:var(--green)">✓</span>' : '<span style="color:var(--muted)">✗</span>'}</td><td>${s.line}</td>`; tbody.appendChild(tr) });
+      const tree = document.getElementById('scope-tree'); tree.innerHTML = '';
+      function renderScope(scope, prefix, parent) {
+        const div = document.createElement('div'); div.className = 'scope-node';
+        const vars = Object.keys(scope.vars);
+        const varStr = vars.length ? ` → <span class="scope-var">${vars.map(v => esc(v)).join(', ')}</span>` : '';
+        div.innerHTML = `<span class="scope-connector">${esc(prefix)}</span><span class="scope-name">${esc(scope.name)}</span>${varStr}`;
+        parent.appendChild(div);
+        scope.children.forEach((ch, i) => { const isLast = i === scope.children.length - 1; const connector = isLast ? '└── ' : '├── '; const newPrefix = prefix + (isLast ? '    ' : '│   '); const d2 = document.createElement('div'); d2.className = 'scope-node'; const v2 = Object.keys(ch.vars); const vs2 = v2.length ? ` → <span class="scope-var">${v2.map(v => esc(v)).join(', ')}</span>` : ''; d2.innerHTML = `<span class="scope-connector">${esc(prefix)}${esc(connector)}</span><span class="scope-name">${esc(ch.name)}</span>${vs2}`; parent.appendChild(d2); ch.children.forEach(ch2 => renderScope(ch2, prefix + (isLast ? '    ' : '│   '), parent)) })
+      }
+      if (semResult.scopes[0]) renderScope(semResult.scopes[0], '', tree);
+      const errWrap = document.getElementById('sem-errors-wrap');
+      if (semResult.errors.length) { errWrap.className = 'errors-wrap'; errWrap.innerHTML = `<div style="color:#e50914;font-weight:700;margin-bottom:6px;font-size:12px">⚠ ${semResult.errors.length} Semantic Error${semResult.errors.length > 1 ? 's' : ''}</div>`; semResult.errors.forEach(e => { const d = document.createElement('div'); d.className = 'error-item'; d.textContent = `[Ln ${e.line}] ${e.message}`; errWrap.appendChild(d) }) } else errWrap.className = 'hidden';
+      const warnWrap = document.getElementById('sem-warnings-wrap');
+      if (semResult.warnings.length) { warnWrap.className = 'warn-wrap'; warnWrap.innerHTML = `<div style="color:#f59e0b;font-weight:700;margin-bottom:6px;font-size:12px">⚡ ${semResult.warnings.length} Warning${semResult.warnings.length > 1 ? 's' : ''}</div>`; semResult.warnings.forEach(w => { const d = document.createElement('div'); d.className = 'warn-item'; d.textContent = `[Ln ${w.line || 0}] ${w.message}`; warnWrap.appendChild(d) }) } else warnWrap.className = 'hidden';
+    }
+
+    function renderTACList(instructions, container, summaryEl) {
+      container.innerHTML = ''; if (summaryEl) summaryEl.innerHTML = '';
+      const instr = instructions.filter(i => !i._removed);
+      if (!instr.length) { container.innerHTML = '<div class="empty" style="padding:40px">No instructions.</div>'; return }
+      const realInstr = instr.filter(i => i.op !== 'label' && i.op !== 'comment');
+      if (summaryEl) summaryEl.innerHTML = `<span class="badge success">Instructions: ${realInstr.length}</span>`;
+      let lineNo = 1;
+      instr.forEach(inst => {
+        const div = document.createElement('div'); div.className = 'tac-line';
+        if (inst._removed) div.classList.add('tac-removed');
+        if (inst.op === 'label') div.innerHTML = `<span class="tac-lineno"></span><span class="tac-label">${esc(inst.label)}:</span>`;
+        else if (inst.op === 'comment') div.innerHTML = `<span class="tac-lineno"></span><span class="tac-comment">// ${esc(inst.comment)}</span>`;
+        else if (inst.op === '=') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'if_false') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">if_false</span> <span class="tac-var">${esc(inst.arg1)}</span> <span class="tac-jump">goto</span> <span class="tac-label">${esc(inst.result)}</span>`;
+        else if (inst.op === 'if_true') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">if_true</span> <span class="tac-var">${esc(inst.arg1)}</span> <span class="tac-jump">goto</span> <span class="tac-label">${esc(inst.result)}</span>`;
+        else if (inst.op === 'goto') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">goto</span> <span class="tac-label">${esc(inst.result)}</span>`;
+        else if (inst.op === 'return') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-jump">return</span>${inst.arg1 ? ' <span class="tac-var">' + esc(inst.arg1) + '</span>' : ''}`;
+        else if (inst.op === 'call') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-func">call</span> <span class="tac-var">${esc(inst.arg1)}</span>, <span class="tac-lit">${esc(inst.arg2)}</span>`;
+        else if (inst.op === 'push_arg') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">push_arg</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'param') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">param</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'begin_func') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">begin_func</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.op === 'end_func') div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-func">end_func</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        else if (inst.arg2) div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-var">${esc(inst.arg1)}</span> <span class="tac-op">${esc(inst.op)}</span> <span class="tac-var">${esc(inst.arg2)}</span>`;
+        else div.innerHTML = `<span class="tac-lineno">${lineNo++}</span><span class="tac-var">${esc(inst.result)}</span> <span class="tac-assign">:=</span> <span class="tac-op">${esc(inst.op)}</span> <span class="tac-var">${esc(inst.arg1)}</span>`;
+        container.appendChild(div)
+      })
+    }
+
+    function renderOptimize(optResult) {
+      const summary = document.getElementById('opt-summary'), log = document.getElementById('opt-log');
+      summary.innerHTML = ''; log.innerHTML = '';
+      const removed = optResult.originalCount - optResult.optimizedCount;
+      const pct = optResult.originalCount > 0 ? Math.round((removed / optResult.originalCount) * 100) : 0;
+      summary.innerHTML = `<span class="badge info">Before: ${optResult.originalCount}</span><span class="badge success">After: ${optResult.optimizedCount}</span><span class="badge warning">Removed: ${removed} (${pct}%)</span>`;
+      if (!optResult.log.length) log.innerHTML = '<div class="empty" style="padding:20px">No optimizations applied.</div>';
+      else optResult.log.forEach(l => { const d = document.createElement('div'); d.className = 'opt-entry'; const tagClass = { fold: 'fold', prop: 'prop', dead: 'dead', strength: 'strength' }[l.type] || 'fold'; d.innerHTML = `<span class="opt-tag ${tagClass}">${esc(l.type)}</span><span class="opt-desc">${esc(l.desc)}</span>`; log.appendChild(d) });
+      renderTACList(optResult.optimized, document.getElementById('opt-tac-container'), null)
+    }
+
+    function renderAssembly(asmResult, container, summaryEl) {
+      container.innerHTML = ''; summaryEl.innerHTML = '';
+      const asm = asmResult.assembly; if (!asm.length) { container.innerHTML = '<div class="empty" style="padding:40px">No assembly.</div>'; return }
+      summaryEl.innerHTML = `<span class="badge success">Instructions: ${asmResult.totalInstructions}</span><span class="badge info">Registers: ${Object.keys(asmResult.regMap).length}</span>`;
+      let lineNo = 1;
+      asm.forEach(a => {
+        const div = document.createElement('div'); div.className = 'asm-line';
+        if (a.section) { div.classList.add('section-line'); div.innerHTML = `<span class="asm-lineno"></span><span class="asm-dir">${esc(a.section)}</span>` }
+        else if (a.directive) div.innerHTML = `<span class="asm-lineno"></span>  <span class="asm-dir">${esc(a.directive)}</span>`;
+        else if (a.label) { div.classList.add('label-line'); div.innerHTML = `<span class="asm-lineno"></span><span class="asm-lbl">${esc(a.label)}:</span>` }
+        else if (a.asmComment) div.innerHTML = `<span class="asm-lineno"></span>  <span class="asm-cmt">; ${esc(a.asmComment)}</span>`;
+        else { const cmt = a.comment ? `  <span class="asm-cmt">${esc(a.comment)}</span>` : ''; const op1 = colorOp(a.op1 || ''); const op2 = a.op2 ? ', ' + colorOp(a.op2) : ''; div.innerHTML = `<span class="asm-lineno">${lineNo++}</span>  <span class="asm-instr">${esc(a.instr)}</span> ${op1}${op2}${cmt}` }
+        container.appendChild(div)
+      })
+    }
+    function colorOp(op) { if (!op) return ''; const regs = ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'esp', 'ebp']; if (regs.includes(op)) return `<span class="asm-reg">${esc(op)}</span>`; if (/^-?\d+$/.test(op)) return `<span class="asm-imm">${esc(op)}</span>`; if (op.startsWith('[')) return `<span class="asm-mem">${esc(op)}</span>`; if (op.startsWith('str_')) return `<span class="asm-str">${esc(op)}</span>`; return `<span class="asm-lbl">${esc(op)}</span>` }
+
+    function renderRegisters(regMap, container) {
+      container.innerHTML = ''; const entries = Object.entries(regMap);
+      if (!entries.length) { container.innerHTML = '<div class="empty">No register allocations.</div>'; return }
+      entries.forEach(([varName, reg]) => { const card = document.createElement('div'); card.className = 'reg-card'; const isTemp = /^t\d+$/.test(varName); card.innerHTML = `<span class="reg-name">${esc(reg)}</span><span class="reg-arrow">→</span><span class="reg-var">${esc(varName)}</span><span class="reg-type">${isTemp ? 'temp' : 'variable'}</span>`; container.appendChild(card) })
+    }
+
+    function renderOutput(outputResult) {
+      const body = document.getElementById('output-body');
+      const stats = document.getElementById('output-stats');
+      body.innerHTML = ''; stats.innerHTML = '';
+
+      if (!outputResult.output.length && !outputResult.hasError) {
+        body.innerHTML = `<span class="out-prompt">$ </span><span class="out-cmd">./program</span>\n<span class="out-info">(No output produced)</span>\n<span class="out-success">Process exited with code ${outputResult.exitCode !== null ? outputResult.exitCode : 0}</span>`;
+      } else {
+        let html = `<span class="out-prompt">$ </span><span class="out-cmd">./program</span>\n`;
+        outputResult.output.forEach(o => {
+          if (o.type === 'line') html += `<span class="out-line">${esc(o.text)}</span>\n`;
+          else if (o.type === 'error') html += `<span class="out-error">${esc(o.text)}</span>\n`;
+          else if (o.type === 'warn') html += `<span class="out-warn">${esc(o.text)}</span>\n`;
+          else if (o.type === 'info') html += `<span class="out-info">${esc(o.text)}</span>\n`;
+        });
+        if (outputResult.exitCode !== null) {
+          html += `\n<span class="${outputResult.hasError ? 'out-error' : 'out-success'}">Process exited with code ${outputResult.exitCode}</span>`;
+        } else {
+          html += `\n<span class="${outputResult.hasError ? 'out-error' : 'out-success'}">Program ${outputResult.hasError ? 'terminated with errors' : 'finished successfully'}</span>`;
+        }
+        body.innerHTML = html;
+      }
+
+      const lineCount = outputResult.output.filter(o => o.type === 'line').length;
+      const errCount = outputResult.output.filter(o => o.type === 'error').length;
+      stats.innerHTML = `
+    <div class="output-stat ${errCount ? 'has-error' : ''}"><span class="dot"></span> ${errCount ? 'Error' : 'Success'}</div>
+    <div class="output-stat"><span class="dot" style="background:var(--blue)"></span> Lines: ${lineCount}</div>
+    ${outputResult.exitCode !== null ? `<div class="output-stat"><span class="dot" style="background:var(--yellow)"></span> Exit: ${outputResult.exitCode}</div>` : ''}
+  `;
+    }
+
+    function renderErrors(errors) { const panel = document.getElementById('errors-panel'); if (!errors.length) { panel.classList.add('hidden'); return } panel.classList.remove('hidden'); panel.innerHTML = `<div style="color:#e50914;font-weight:700;margin-bottom:6px;font-size:12px">⚠ ${errors.length} Parse Error${errors.length > 1 ? 's' : ''}</div>`; errors.forEach(e => { const d = document.createElement('div'); d.className = 'error-item'; d.textContent = `[Ln ${e.line} Col ${e.column}] ${e.message}`; panel.appendChild(d) }) }
+
+    function renderSummary(ast, parseErrors, semResult, tacOrigCount, optResult, asmResult, tokenCount, outputResult) {
+      const stats = document.getElementById('summary-stats'), tbody = document.getElementById('instr-tbody');
+      const savings = tacOrigCount > 0 ? Math.round(((tacOrigCount - optResult.optimizedCount) / tacOrigCount) * 100) : 0;
+      const outLines = outputResult.output.filter(o => o.type === 'line').length;
+      const outErrors = outputResult.output.filter(o => o.type === 'error').length;
+      stats.innerHTML = `
+    <div class="stat-card"><div class="stat-value ${parseErrors.length ? '' : 'ok'}">${parseErrors.length ? 'ERR' : 'OK'}</div><div class="stat-label">Parse</div></div>
+    <div class="stat-card"><div class="stat-value">${tokenCount}</div><div class="stat-label">Tokens</div></div>
+    <div class="stat-card"><div class="stat-value blue">${ast.countNodes()}</div><div class="stat-label">AST Nodes</div></div>
+    <div class="stat-card"><div class="stat-value ${semResult.errors.length ? '' : 'ok'}">${semResult.errors.length}</div><div class="stat-label">Sem Errors</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--yellow)">${semResult.warnings.length}</div><div class="stat-label">Warnings</div></div>
+    <div class="stat-card"><div class="stat-value">${tacOrigCount}</div><div class="stat-label">TAC Before</div></div>
+    <div class="stat-card"><div class="stat-value ok">${optResult.optimizedCount}</div><div class="stat-label">TAC After</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--yellow)">${savings}%</div><div class="stat-label">Savings</div></div>
+    <div class="stat-card"><div class="stat-value ok">${asmResult.totalInstructions}</div><div class="stat-label">ASM Instrs</div></div>
+    <div class="stat-card"><div class="stat-value blue">${Object.keys(asmResult.regMap).length}</div><div class="stat-label">Registers</div></div>
+    <div class="stat-card"><div class="stat-value ok">${outLines}</div><div class="stat-label">Output Lines</div></div>
+    <div class="stat-card"><div class="stat-value ${outErrors ? '' : 'ok'}">${outErrors || '0'}</div><div class="stat-label">Runtime Errs</div></div>`;
+      tbody.innerHTML = '';
+      const cats = { 'MOV': asmResult.instrCounts.mov, 'ADD': asmResult.instrCounts.add, 'SUB': asmResult.instrCounts.sub, 'IMUL': asmResult.instrCounts.imul, 'IDIV': asmResult.instrCounts.idiv, 'CMP': asmResult.instrCounts.cmp, 'JMP': asmResult.instrCounts.jmp, 'Jcc': asmResult.instrCounts.jcc, 'PUSH': asmResult.instrCounts.push, 'POP': asmResult.instrCounts.pop, 'CALL': asmResult.instrCounts.call, 'RET': asmResult.instrCounts.ret, 'SHL/SHR': asmResult.instrCounts.shl + asmResult.instrCounts.shr, 'XOR': asmResult.instrCounts.xor, 'NEG': asmResult.instrCounts.neg, 'Other': asmResult.instrCounts.other };
+      Object.entries(cats).forEach(([cat, cnt]) => { if (cnt > 0) { const tr = document.createElement('tr'); tr.innerHTML = `<td class="val">${esc(cat)}</td><td>${cnt}</td>`; tbody.appendChild(tr) } });
+      if (!Object.values(cats).some(v => v > 0)) tbody.innerHTML = '<tr><td colspan="2" class="empty">No instructions.</td></tr>'
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PIPELINE + TABS
+    // ═══════════════════════════════════════════════════════════
+    const tabPanelMap = ['tokens', 'ast', 'semantic', 'tac', 'optimize', 'asm', 'output', 'summary'];
+    const phaseNames = ['tokens', 'ast', 'semantic', 'tac', 'optimize', 'asm', 'output'];
+    let phaseStatus = [0, 0, 0, 0, 0, 0, 0]; // 0=pending, 1=done, 2=error
+
+    function updatePipeline(activeIdx) {
+      document.querySelectorAll('.pipe-step').forEach(el => {
+        const idx = parseInt(el.dataset.phase);
+        el.classList.remove('active', 'done', 'err');
+        if (idx === activeIdx) el.classList.add('active');
+        else if (phaseStatus[idx] === 1) el.classList.add('done');
+        else if (phaseStatus[idx] === 2) el.classList.add('err');
+        const icon = el.querySelector('.pipe-icon');
+        if (phaseStatus[idx] === 1) icon.textContent = '✓';
+        else if (phaseStatus[idx] === 2) icon.textContent = '⚠';
+        else icon.textContent = ['①', '②', '③', '④', '⑤', '⑥', '⑦'][idx]
+      })
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); tab.classList.add('active');
+        const target = tab.dataset.tab;
+        tabPanelMap.forEach(p => document.getElementById('panel-' + p).classList.toggle('hidden', p !== target));
+        const pIdx = phaseNames.indexOf(target); if (pIdx >= 0) updatePipeline(pIdx)
+      })
+    });
+    document.querySelectorAll('.pipe-step').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.dataset.phase); const tabName = phaseNames[idx];
+        document.querySelectorAll('.tab').forEach(t => { t.classList.toggle('active', t.dataset.tab === tabName) });
+        tabPanelMap.forEach(p => document.getElementById('panel-' + p).classList.toggle('hidden', p !== tabName));
+        updatePipeline(idx)
+      })
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  MAIN COMPILE
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('run').addEventListener('click', () => {
+      const code = document.getElementById('code').value;
+      const status = document.getElementById('status');
+      status.textContent = 'Compiling…'; phaseStatus = [0, 0, 0, 0, 0, 0, 0]; updatePipeline(0);
+      try {
+        const tokens = tokenize(code);
+        const filtered = tokens.filter(t => t.type !== 'NEWLINE' && t.type !== 'COMMENT');
+        renderTokens(tokens); phaseStatus[0] = 1; updatePipeline(0);
+
+        const parser = new Parser(tokens); const ast = parser.parse();
+        renderAST(ast, document.getElementById('ast-container'));
+        renderErrors(parser.errors);
+        phaseStatus[1] = parser.errors.length ? 2 : 1; updatePipeline(1);
+
+        const sem = new SemanticAnalyzer(); sem.analyze(ast);
+        renderSemantic({ symbols: sem.symbols, scopes: sem.scopes, errors: sem.errors, warnings: sem.warnings });
+        phaseStatus[2] = sem.errors.length ? 2 : 1; updatePipeline(2);
+
+        const gen = new TACGenerator(); const tacResult = gen.generate(ast);
+        const tacReal = tacResult.instructions.filter(i => i.op !== 'label' && i.op !== 'comment');
+        renderTACList(tacResult.instructions, document.getElementById('tac-container'), document.getElementById('tac-summary'));
+        phaseStatus[3] = 1; updatePipeline(3);
+
+        const optimizer = new Optimizer(tacResult.instructions); const optResult = optimizer.optimize();
+        renderOptimize(optResult);
+        phaseStatus[4] = 1; updatePipeline(4);
+
+        const codeGen = new TargetCodeGenerator(optResult.optimized, tacResult.symbols); const asmResult = codeGen.generate();
+        renderAssembly(asmResult, document.getElementById('asm-container'), document.getElementById('asm-summary'));
+        renderRegisters(asmResult.regMap, document.getElementById('regs-container'));
+        phaseStatus[5] = 1; updatePipeline(5);
+
+        // Phase 7: Execute
+        const interpreter = new Interpreter(ast); const outputResult = interpreter.run();
+        renderOutput(outputResult);
+        phaseStatus[6] = outputResult.hasError ? 2 : 1; updatePipeline(6);
+
+        renderSummary(ast, parser.errors, { errors: sem.errors, warnings: sem.warnings }, tacReal.length, optResult, asmResult, filtered.length, outputResult);
+
+        const errCount = parser.errors.length + sem.errors.length;
+        const outLines = outputResult.output.filter(o => o.type === 'line').length;
+        status.textContent = `Done — ${filtered.length} tokens → ${ast.countNodes()} AST → ${tacReal.length} TAC → ${optResult.optimizedCount} opt → ${asmResult.totalInstructions} ASM → ${outLines} output lines${errCount ? ' (' + errCount + ' errors)' : ''}`;
+      } catch (e) { status.textContent = 'Error: ' + e.message; console.error(e) }
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      document.getElementById('code').value = ''; document.getElementById('status').textContent = 'Ready';
+      phaseStatus = [0, 0, 0, 0, 0, 0, 0]; updatePipeline(-1);
+      document.getElementById('token-summary').innerHTML = '';
+      document.getElementById('token-tbody').innerHTML = '<tr><td colspan="5" class="empty">Click <strong>▶ Compile</strong> to begin.</td></tr>';
+      document.getElementById('ast-container').innerHTML = '<div class="empty">Click <strong>▶ Compile</strong> to build AST.</div>';
+      document.getElementById('sym-tbody').innerHTML = '<tr><td colspan="5" class="empty">No data yet.</td></tr>';
+      document.getElementById('scope-tree').innerHTML = '<div class="empty" style="padding:20px">No data yet.</div>';
+      document.getElementById('sem-errors-wrap').className = 'hidden'; document.getElementById('sem-warnings-wrap').className = 'hidden';
+      document.getElementById('tac-summary').innerHTML = ''; document.getElementById('tac-container').innerHTML = '<div class="empty" style="padding:40px">Click <strong>▶ Compile</strong>.</div>';
+      document.getElementById('opt-summary').innerHTML = ''; document.getElementById('opt-log').innerHTML = '<div class="empty" style="padding:20px">No optimizations yet.</div>';
+      document.getElementById('opt-tac-container').innerHTML = '<div class="empty" style="padding:40px">Click <strong>▶ Compile</strong>.</div>';
+      document.getElementById('asm-summary').innerHTML = ''; document.getElementById('asm-container').innerHTML = '<div class="empty" style="padding:40px">Click <strong>▶ Compile</strong>.</div>';
+      document.getElementById('regs-container').innerHTML = '<div class="empty">No data.</div>';
+      document.getElementById('output-body').innerHTML = '<span class="out-info">Click <strong>▶ Compile</strong> to see program output...</span>';
+      document.getElementById('output-stats').innerHTML = '';
+      document.getElementById('summary-stats').innerHTML = ''; document.getElementById('instr-tbody').innerHTML = '<tr><td colspan="2" class="empty">No data yet.</td></tr>';
+      document.getElementById('errors-panel').classList.add('hidden')
+    });
+
+    document.getElementById('demo-c').addEventListener('click', () => {
+      document.getElementById('code').value = `#include <stdio.h>
+
+int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+int main() {
+    int a = 5;
+    int b = 10;
+    int c = a + b;
+    int d = c * 2;
+    int e = d - a;
+
+    printf("a = %d\\n", a);
+    printf("b = %d\\n", b);
+    printf("c = a + b = %d\\n", c);
+    printf("d = c * 2 = %d\\n", d);
+
+    if (a < b) {
+        printf("a is less than b\\n");
+        c = c + 1;
+        d = d * 2;
+    } else {
+        printf("a is not less than b\\n");
+        c = c - 1;
+    }
+
+    printf("After if: c = %d, d = %d\\n", c, d);
+
+    for (int i = 0; i < 5; i++) {
+        e = e + i;
+    }
+    printf("After for loop: e = %d\\n", e);
+
+    while (d > 50) {
+        d = d - 10;
+    }
+    printf("After while: d = %d\\n", d);
+
+    switch (a) {
+        case 1:
+            printf("a is 1\\n");
+            break;
+        case 5:
+            printf("a is 5\\n");
+            break;
+        default:
+            printf("a is something else\\n");
+    }
+
+    int fact = factorial(a);
+    printf("factorial(%d) = %d\\n", a, fact);
+
+    printf("Final: c=%d, d=%d, e=%d\\n", c, d, e);
+    return 0;
+}`; document.getElementById('run').click()
+    });
+
+    document.getElementById('demo-py').addEventListener('click', () => {
+      document.getElementById('code').value = `# Python Compiler Demo
+
+def fibonacci(n):
+    if n <= 0:
+        return 0
+    if n <= 1:
+        return 1
+    a = 0
+    b = 1
+    i = 2
+    while i <= n:
+        temp = a + b
+        a = b
+        b = temp
+        i = i + 1
+    return b
+
+def compute(x, y):
+    a = x + y
+    b = a * 2
+    c = b - x
+    if a > 10:
+        c = c + 1
+    elif a == 10:
+        c = c * 2
+    else:
+        c = 0
+    return c
+
+print("=== Fibonacci Sequence ===")
+i = 0
+while i < 10:
+    print(fibonacci(i))
+    i = i + 1
+
+print("=== Computation ===")
+result = compute(15, 25)
+print("compute(15, 25) =", result)
+
+print("=== For Loop ===")
+for i in range(5):
+    if i % 2 == 0:
+        print(i, "is even")
+    else:
+        print(i, "is odd")
+
+print("=== Math ===")
+a = 10
+b = 3
+print("a + b =", a + b)
+print("a - b =", a - b)
+print("a * b =", a * b)
+print("a / b =", a / b)
+print("a % b =", a % b)
+
+x = 42
+is_valid = True
+y = 0
+if is_valid:
+    y = x
+else:
+    y = 0
+print("y =", y)
+
+print("=== Done! ===")`; document.getElementById('run').click()
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Analyser - Virtual Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        header {
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #e94560;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 28px;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        header .subtitle {
+            font-size: 14px;
+            color: #a5a5a5;
+        }
+
+        .student-info {
+            text-align: right;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .student-info span {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        nav {
+            background: #16213e;
+            padding: 12px 40px;
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        nav a {
+            color: #e94560;
+            text-decoration: none;
+            font-size: 15px;
+            padding: 8px 20px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: #e94560;
+            color: #fff;
+            border-color: #e94560;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 40px 40px;
+        }
+
+        .hero h2 {
+            font-size: 48px;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #b0b0b0;
+            max-width: 750px;
+            margin: 0 auto 40px;
+            line-height: 1.8;
+        }
+
+        .hero a.btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(90deg, #e94560, #c0392b);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .hero a.btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(233, 69, 96, 0.6);
+        }
+
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px;
+            width: 320px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+            border-color: #e94560;
+        }
+
+        .card h3 {
+            color: #e94560;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: #999;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 32px;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .section-desc {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .theory {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #333;
+            margin-bottom: 40px;
+        }
+
+        .theory h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .theory p,
+        .theory li {
+            color: #bbb;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .theory ul {
+            padding-left: 25px;
+            margin-top: 10px;
+        }
+
+        .theory table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .theory table th,
+        .theory table td {
+            border: 1px solid #444;
+            padding: 10px 15px;
+            text-align: left;
+            color: #ccc;
+        }
+
+        .theory table th {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .theory code {
+            background: #0f0f1a;
+            color: #00ff88;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+        }
+
+        .theory pre {
+            background: #0f0f1a;
+            color: #00ff88;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            background: #1a1a2e;
+            border-top: 2px solid #e94560;
+            color: #777;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+
+        footer span {
+            color: #e94560;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>Semantic Analyser</h1>
+            <div class="subtitle">Compiler Design - Virtual Lab</div>
+        </div>
+        <div class="student-info">
+            <div>Created by: <span>Sambit</span></div>
+            <div>Register No: <span>Sambit71936</span></div>
+        </div>
+    </header>
+
+    <nav>
+        <a href="index.html" class="active">Home</a>
+        <a href="#theory">Theory</a>
+        <a href="#checks">Semantic Checks</a>
+        <a href="#symbol-table">Symbol Table</a>
+        <a href="#type-system">Type System</a>
+        <a href="simulation.html">Simulation</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h2>Semantic Analyser</h2>
+        <p>
+            Explore the third phase of a compiler — the <strong>Semantic Analyser</strong>.
+            Understand how a compiler validates the <strong>meaning</strong> of source code beyond syntax,
+            including type checking, scope resolution, undeclared variable detection,
+            and type compatibility enforcement using a <strong>Symbol Table</strong>.
+        </p>
+        <a href="simulation.html" class="btn">Start Simulation</a>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="content">
+        <div class="card">
+            <h3>🔍 Type Checking</h3>
+            <p>Verifies that operators and operands are type-compatible. Detects errors like adding an integer to a
+                string or assigning a float to a char without proper casting.</p>
+        </div>
+        <div class="card">
+            <h3>📋 Symbol Table</h3>
+            <p>Maintains a data structure that stores information about every identifier — its name, type, scope, and
+                memory location — used throughout the compilation process.</p>
+        </div>
+        <div class="card">
+            <h3>🚨 Error Detection</h3>
+            <p>Catches semantic errors invisible to the parser: undeclared variables, duplicate declarations, type
+                mismatches, scope violations, and incompatible assignments.</p>
+        </div>
+        <div class="card">
+            <h3>🔄 Type Coercion</h3>
+            <p>Handles implicit type conversions (widening) such as automatically promoting an int to float in
+                mixed-type expressions, following the type hierarchy rules.</p>
+        </div>
+        <div class="card">
+            <h3>🎯 Scope Resolution</h3>
+            <p>Ensures variables are used within their valid scope. Detects when a variable declared inside a block is
+                accessed outside, or when names collide across scopes.</p>
+        </div>
+        <div class="card">
+            <h3>🌳 Annotated AST</h3>
+            <p>Produces an Annotated Abstract Syntax Tree where each node carries type information, enabling the next
+                phases (intermediate code generation) to proceed correctly.</p>
+        </div>
+    </div>
+
+    <!-- Theory Section -->
+    <div id="theory" style="padding: 20px 40px;">
+        <h2 class="section-title">Theory</h2>
+        <p class="section-desc">Understanding the fundamentals of Semantic Analysis</p>
+
+        <div class="theory">
+            <h3>What is a Semantic Analyser?</h3>
+            <p>
+                A <strong>Semantic Analyser</strong> is the third phase of a compiler that checks
+                the <em>meaning</em> of the source code. While the Lexical Analyser validates
+                tokens and the Syntax Analyser validates structure, the Semantic Analyser ensures
+                that the program makes <strong>logical sense</strong>. It uses the parse tree
+                produced by the parser and enriches it with type information using a
+                <strong>Symbol Table</strong>.
+            </p>
+            <br>
+            <h3>Key Functions</h3>
+            <ul>
+                <li><strong>Type Checking</strong> — ensures operands and operators are compatible</li>
+                <li><strong>Declaration Verification</strong> — ensures every variable is declared before use</li>
+                <li><strong>Duplicate Detection</strong> — prevents re-declaring a variable in the same scope</li>
+                <li><strong>Scope Resolution</strong> — resolves variable references to the correct declaration</li>
+                <li><strong>Type Coercion</strong> — inserts implicit type conversions where necessary</li>
+                <li><strong>Symbol Table Management</strong> — builds and maintains a table of all identifiers</li>
+                <li><strong>Annotated AST Generation</strong> — attaches type info to every tree node</li>
+            </ul>
+            <br>
+            <h3>How It Works</h3>
+            <p>
+                The semantic analyser traverses the Abstract Syntax Tree (AST) produced by the parser.
+                At each node, it performs checks:
+            </p>
+            <ul>
+                <li>When a <strong>declaration</strong> is encountered (e.g., <code>int x;</code>), the variable is
+                    added to the Symbol Table</li>
+                <li>When a <strong>variable is used</strong> (e.g., <code>x = 5;</code>), the analyser checks the Symbol
+                    Table to verify it was declared</li>
+                <li>When an <strong>expression</strong> is evaluated (e.g., <code>x + y</code>), the types of both
+                    operands are checked for compatibility</li>
+                <li>When an <strong>assignment</strong> occurs (e.g., <code>x = y + 3.14;</code>), the type of the
+                    right-hand side must be compatible with the left-hand side</li>
+            </ul>
+            <br>
+            <h3>Example</h3>
+            <pre>
+  int a = 10;
+  float b = 3.14;
+  char c = "hello";
+
+  a = a + b;      // ✅ OK: int + float → float (type coercion)
+  b = a * 2;      // ✅ OK: int * int → int, assigned to float
+  a = c + 1;      // ❌ ERROR: char (string) + int → type mismatch
+  d = a + b;      // ❌ ERROR: variable 'd' not declared
+  int a = 20;     // ❌ ERROR: duplicate declaration of 'a'</pre>
+        </div>
+    </div>
+
+    <!-- Semantic Checks Section -->
+    <div id="checks" style="padding: 20px 40px;">
+        <h2 class="section-title">Semantic Checks</h2>
+        <p class="section-desc">Types of semantic errors detected by the analyser</p>
+
+        <div class="theory">
+            <table>
+                <tr>
+                    <th>Check Type</th>
+                    <th>Description</th>
+                    <th>Example Error</th>
+                </tr>
+                <tr>
+                    <td>Undeclared Variable</td>
+                    <td>Variable used without prior declaration</td>
+                    <td><code>x = 10;</code> (x was never declared)</td>
+                </tr>
+                <tr>
+                    <td>Duplicate Declaration</td>
+                    <td>Variable declared more than once in same scope</td>
+                    <td><code>int a; int a;</code></td>
+                </tr>
+                <tr>
+                    <td>Type Mismatch (Assignment)</td>
+                    <td>Assigning an incompatible type to a variable</td>
+                    <td><code>int x = "hello";</code></td>
+                </tr>
+                <tr>
+                    <td>Type Mismatch (Expression)</td>
+                    <td>Using incompatible types in an operation</td>
+                    <td><code>char a = "hi"; a + 5;</code></td>
+                </tr>
+                <tr>
+                    <td>Type Coercion (Implicit)</td>
+                    <td>Automatic widening conversion applied</td>
+                    <td><code>float x = 10;</code> (int → float)</td>
+                </tr>
+                <tr>
+                    <td>Narrowing Warning</td>
+                    <td>Assigning a wider type to a narrower one</td>
+                    <td><code>int x = 3.14;</code> (float → int, data loss)</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Symbol Table Section -->
+    <div id="symbol-table" style="padding: 20px 40px;">
+        <h2 class="section-title">Symbol Table</h2>
+        <p class="section-desc">The core data structure used in semantic analysis</p>
+
+        <div class="theory">
+            <h3>What is a Symbol Table?</h3>
+            <p>
+                A <strong>Symbol Table</strong> is a data structure maintained by the compiler that
+                stores information about each identifier (variable, function, etc.) encountered in
+                the source code. It is built during the semantic analysis phase and used throughout
+                the remaining compilation process.
+            </p>
+            <br>
+            <h3>Symbol Table Entry Fields</h3>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                </tr>
+                <tr>
+                    <td>Name</td>
+                    <td>The identifier name</td>
+                    <td><code>count</code></td>
+                </tr>
+                <tr>
+                    <td>Type</td>
+                    <td>Data type of the variable</td>
+                    <td><code>int</code>, <code>float</code>, <code>char</code></td>
+                </tr>
+                <tr>
+                    <td>Scope</td>
+                    <td>Where the variable is visible</td>
+                    <td><code>global</code>, <code>local</code></td>
+                </tr>
+                <tr>
+                    <td>Line Declared</td>
+                    <td>Line number where first declared</td>
+                    <td><code>3</code></td>
+                </tr>
+                <tr>
+                    <td>Value</td>
+                    <td>Assigned value (if initialization present)</td>
+                    <td><code>10</code>, <code>3.14</code>, <code>"hello"</code></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Type System Section -->
+    <div id="type-system" style="padding: 20px 40px;">
+        <h2 class="section-title">Type System</h2>
+        <p class="section-desc">Type hierarchy and compatibility rules</p>
+
+        <div class="theory">
+            <h3>Type Hierarchy (Widening Order)</h3>
+            <pre>
+   char  →  int  →  float  →  double
+   (narrowest)                (widest)
+
+   Widening (implicit):  int → float   ✅ Safe
+   Narrowing (warning):  float → int   ⚠️ Data loss possible</pre>
+            <br>
+            <h3>Type Compatibility Matrix</h3>
+            <table>
+                <tr>
+                    <th>Operation</th>
+                    <th>int ⊕ int</th>
+                    <th>int ⊕ float</th>
+                    <th>float ⊕ float</th>
+                    <th>char ⊕ int</th>
+                    <th>char ⊕ char</th>
+                </tr>
+                <tr>
+                    <td><code>+  -  *  /</code></td>
+                    <td>✅ int</td>
+                    <td>✅ float (coerce)</td>
+                    <td>✅ float</td>
+                    <td>❌ error</td>
+                    <td>❌ error</td>
+                </tr>
+                <tr>
+                    <td><code>=</code> (assign)</td>
+                    <td>✅ int</td>
+                    <td>⚠️ narrowing</td>
+                    <td>✅ float</td>
+                    <td>❌ error</td>
+                    <td>✅ char</td>
+                </tr>
+                <tr>
+                    <td><code>== != &lt; &gt;</code></td>
+                    <td>✅ bool</td>
+                    <td>✅ bool (coerce)</td>
+                    <td>✅ bool</td>
+                    <td>❌ error</td>
+                    <td>❌ error</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>Semantic Analyser Virtual Lab | Created by <span>Sambit</span> | Reg No: <span>Sambit71936</span></p>
+        <p>&copy; 2025 Compiler Design Lab</p>
+    </footer>
+
+</body>
+
+</html>

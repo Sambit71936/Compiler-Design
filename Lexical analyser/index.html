@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexical Analyser - Virtual Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        header {
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #e94560;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        header h1 {
+            font-size: 28px;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        header .subtitle {
+            font-size: 14px;
+            color: #a5a5a5;
+        }
+
+        .student-info {
+            text-align: right;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .student-info span {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        nav {
+            background: #16213e;
+            padding: 12px 40px;
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        nav a {
+            color: #e94560;
+            text-decoration: none;
+            font-size: 15px;
+            padding: 8px 20px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background: #e94560;
+            color: #fff;
+            border-color: #e94560;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 40px 40px;
+        }
+
+        .hero h2 {
+            font-size: 48px;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #b0b0b0;
+            max-width: 700px;
+            margin: 0 auto 40px;
+            line-height: 1.8;
+        }
+
+        .hero a.btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(90deg, #e94560, #c0392b);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .hero a.btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(233, 69, 96, 0.6);
+        }
+
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px;
+            width: 320px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+            border-color: #e94560;
+        }
+
+        .card h3 {
+            color: #e94560;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: #999;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 32px;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .section-desc {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .theory {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #333;
+            margin-bottom: 40px;
+        }
+
+        .theory h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .theory p,
+        .theory li {
+            color: #bbb;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .theory ul {
+            padding-left: 25px;
+            margin-top: 10px;
+        }
+
+        .theory table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .theory table th,
+        .theory table td {
+            border: 1px solid #444;
+            padding: 10px 15px;
+            text-align: left;
+            color: #ccc;
+        }
+
+        .theory table th {
+            background: #e94560;
+            color: #fff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            background: #1a1a2e;
+            border-top: 2px solid #e94560;
+            color: #777;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+
+        footer span {
+            color: #e94560;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>Lexical Analyser</h1>
+            <div class="subtitle">Compiler Design - Virtual Lab</div>
+        </div>
+        <div class="student-info">
+            <div>Created by: <span>Sambit</span></div>
+            <div>Register No: <span>2301010008</span></div>
+        </div>
+    </header>
+
+    <nav>
+        <a href="index.html" class="active">Home</a>
+        <a href="#theory">Theory</a>
+        <a href="#tokens">Token Types</a>
+        <a href="simulation.html">Simulation</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h2>Lexical Analyser</h2>
+        <p>
+            Explore the first phase of a compiler — the <strong>Lexical Analyser</strong>.
+            Understand how source code is broken down into meaningful tokens like
+            keywords, identifiers, numbers, operators, and separators.
+        </p>
+        <a href="simulation.html" class="btn">Start Simulation</a>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="content">
+        <div class="card">
+            <h3>🔍 Tokenization</h3>
+            <p>Break source code into its smallest meaningful units — tokens. Identify keywords, identifiers, constants,
+                and special symbols.</p>
+        </div>
+        <div class="card">
+            <h3>⚙️ Pattern Matching</h3>
+            <p>The lexer scans characters left-to-right, matching patterns to classify each lexeme into the correct
+                token category.</p>
+        </div>
+        <div class="card">
+            <h3>📊 Token Stream</h3>
+            <p>The output is a stream of tokens with line numbers that can be passed to the next phase — the Syntax
+                Analyser (Parser).</p>
+        </div>
+    </div>
+
+    <!-- Theory Section -->
+    <div id="theory" style="padding: 20px 40px;">
+        <h2 class="section-title">Theory</h2>
+        <p class="section-desc">Understanding the fundamentals of Lexical Analysis</p>
+
+        <div class="theory">
+            <h3>What is a Lexical Analyser?</h3>
+            <p>
+                A <strong>Lexical Analyser</strong> (also called a <em>Lexer</em> or <em>Scanner</em>) is the
+                first phase of a compiler. It reads the input source code as a stream of characters and
+                converts it into a sequence of <strong>tokens</strong>. Each token represents a meaningful
+                unit such as a keyword, identifier, number, operator, or separator.
+            </p>
+            <br>
+            <h3>Key Functions</h3>
+            <ul>
+                <li>Reads the source program character by character</li>
+                <li>Groups characters into lexemes</li>
+                <li>Classifies each lexeme into a token type</li>
+                <li>Removes whitespace and comments</li>
+                <li>Reports lexical errors (e.g., invalid characters)</li>
+                <li>Tracks line numbers for error reporting</li>
+            </ul>
+            <br>
+            <h3>How It Works</h3>
+            <p>
+                The lexer uses <strong>pattern matching</strong> rules to identify tokens.
+                For example, if the current character is a letter, it continues reading until
+                a non-alphanumeric character is found, then checks if the resulting word is a
+                keyword or an identifier. Similarly, digits are grouped to form numbers, and
+                special symbols are recognized as operators or separators.
+            </p>
+        </div>
+    </div>
+
+    <!-- Token Types Section -->
+    <div id="tokens" style="padding: 20px 40px;">
+        <h2 class="section-title">Token Types</h2>
+        <p class="section-desc">Categories of tokens recognized by the Lexical Analyser</p>
+
+        <div class="theory">
+            <table>
+                <tr>
+                    <th>Token Type</th>
+                    <th>Description</th>
+                    <th>Examples</th>
+                </tr>
+                <tr>
+                    <td>KEYWORD</td>
+                    <td>Reserved words of the language</td>
+                    <td><code>int, float, if, else, return, while, for, char, double, void</code></td>
+                </tr>
+                <tr>
+                    <td>IDENTIFIER</td>
+                    <td>User-defined names for variables, functions</td>
+                    <td><code>main, sum, count, myVar</code></td>
+                </tr>
+                <tr>
+                    <td>NUMBER</td>
+                    <td>Integer and floating-point constants</td>
+                    <td><code>42, 3.14, 100, 0</code></td>
+                </tr>
+                <tr>
+                    <td>STRING</td>
+                    <td>Text enclosed in double quotes</td>
+                    <td><code>"hello", "world"</code></td>
+                </tr>
+                <tr>
+                    <td>OPERATOR</td>
+                    <td>Arithmetic, relational, and logical operators</td>
+                    <td><code>+, -, *, /, =, <, >, !, &, |</code></td>
+                </tr>
+                <tr>
+                    <td>SEPARATOR</td>
+                    <td>Punctuation and grouping symbols</td>
+                    <td><code>; , ( ) { } [ ]</code></td>
+                </tr>
+                <tr>
+                    <td>UNKNOWN</td>
+                    <td>Unrecognized characters</td>
+                    <td><code>@, #, ~</code></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>Lexical Analyser Virtual Lab | Created by <span>Sambit</span> | Reg No: <span>Sambit71936</span></p>
+        <p>&copy; 2025 Compiler Design Lab</p>
+    </footer>
+
+</body>
+
+</html>
