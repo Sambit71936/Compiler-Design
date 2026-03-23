@@ -1,1 +1,1 @@
-https://sambit71936.github.io/Syntax-analyser/simulation.html
+https://sambit71936.github.io/syntax_analyzer/simulation.html
