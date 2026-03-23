@@ -34,12 +34,6 @@
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
-            background-image:
-                radial-gradient(circle at 50% 0%, rgba(188, 19, 254, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.05) 0%, transparent 50%),
-                linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
             color: var(--text);
             min-height: 100vh;
             line-height: 1.6;
@@ -47,7 +41,6 @@
         }
 
         header {
-            backdrop-filter: blur(12px);
             background: rgba(5, 5, 10, 0.8);
             border-bottom: 1px solid var(--border);
             padding: 16px 40px;
@@ -164,12 +157,10 @@
         .output-panel {
             flex: 1;
             background: var(--surface);
-            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
             transition: all 0.3s ease;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.05);
         }
 
         .editor-panel:hover,
@@ -199,7 +190,6 @@
             border-radius: 4px;
             font-size: 10px;
             font-weight: 900;
-            box-shadow: 0 0 10px var(--cyan-glow);
         }
 
         textarea {
@@ -252,8 +242,6 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
 
         .btn-run {
@@ -265,7 +253,7 @@
         .btn-run:hover {
             transform: translateY(-2px);
             filter: brightness(1.2);
-            box-shadow: 0 0 30px var(--cyan-glow), 0 0 50px rgba(188, 19, 254, 0.2);
+            box-shadow: 0 0 30px var(--cyan-glow);
         }
 
         .btn-clear {
@@ -287,7 +275,6 @@
             transform: translateY(-2px);
         }
 
-        /* Token row styling */
         .token-row {
             display: flex;
             padding: 10px 16px;
@@ -323,6 +310,7 @@
         .token-value {
             color: var(--text);
             font-size: 14px;
+            word-break: break-all;
         }
 
         .type-KEYWORD {
@@ -364,7 +352,6 @@
             background: rgba(255, 46, 99, 0.1);
         }
 
-        /* Stats bar */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -374,7 +361,6 @@
 
         .stat-item {
             background: var(--surface);
-            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
@@ -385,7 +371,6 @@
         .stat-item:hover {
             border-color: var(--cyan);
             transform: translateY(-4px);
-            box-shadow: 0 0 20px var(--cyan-glow);
         }
 
         .stat-item .stat-num {
@@ -393,7 +378,6 @@
             font-size: 32px;
             font-weight: 900;
             color: var(--cyan);
-            text-shadow: 0 0 10px var(--cyan-glow);
         }
 
         .stat-item .stat-label {
@@ -437,7 +421,7 @@
         </div>
         <div class="student-info">
             <div>Engineer: <span>Sambit</span></div>
-            <div>ID: <span>2301010008</span></div>
+            <div>ID: <span>Sambit71936</span></div>
         </div>
     </header>
 
@@ -522,7 +506,6 @@ int main() {
     </footer>
 
     <script>
-        // Keywords list (matches your lexical.c)
         const KEYWORDS = [
             "int", "float", "if", "else", "return",
             "while", "for", "char", "double", "void"
@@ -545,14 +528,13 @@ int main() {
         }
 
         function isOperator(c) {
-            return "+-*/=%!<>&|".includes(c);
+            return "+-*/%=!<>&|".includes(c);
         }
 
         function isSeparator(c) {
             return ";,(){}[]".includes(c);
         }
 
-        // Lexical analyser — mirrors your lexical.c logic
         function lexicalAnalyse(input) {
             const tokens = [];
             let i = 0;
@@ -561,26 +543,22 @@ int main() {
             while (i < input.length) {
                 let c = input[i];
 
-                // Track line numbers
                 if (c === '\n') {
                     lineNo++;
                     i++;
                     continue;
                 }
 
-                // Skip whitespace
                 if (/\s/.test(c)) {
                     i++;
                     continue;
                 }
 
-                // Skip single-line comments
                 if (c === '/' && i + 1 < input.length && input[i + 1] === '/') {
                     while (i < input.length && input[i] !== '\n') i++;
                     continue;
                 }
 
-                // Skip multi-line comments
                 if (c === '/' && i + 1 < input.length && input[i + 1] === '*') {
                     i += 2;
                     while (i + 1 < input.length && !(input[i] === '*' && input[i + 1] === '/')) {
@@ -591,7 +569,6 @@ int main() {
                     continue;
                 }
 
-                // Identifiers and Keywords
                 if (isAlpha(c)) {
                     let word = '';
                     while (i < input.length && isAlnum(input[i])) {
@@ -606,7 +583,6 @@ int main() {
                     continue;
                 }
 
-                // Numbers (integer and float)
                 if (isDigit(c)) {
                     let num = '';
                     let dotSeen = false;
@@ -619,34 +595,30 @@ int main() {
                     continue;
                 }
 
-                // String literals
                 if (c === '"') {
                     let str = '';
-                    i++; // skip opening quote
+                    i++;
                     while (i < input.length && input[i] !== '"') {
                         str += input[i];
                         i++;
                     }
-                    i++; // skip closing quote
+                    i++;
                     tokens.push({ line: lineNo, type: 'STRING', value: '"' + str + '"' });
                     continue;
                 }
 
-                // Operators
                 if (isOperator(c)) {
                     tokens.push({ line: lineNo, type: 'OPERATOR', value: c });
                     i++;
                     continue;
                 }
 
-                // Separators
                 if (isSeparator(c)) {
                     tokens.push({ line: lineNo, type: 'SEPARATOR', value: c });
                     i++;
                     continue;
                 }
 
-                // Unknown
                 tokens.push({ line: lineNo, type: 'UNKNOWN', value: c });
                 i++;
             }
@@ -666,7 +638,6 @@ int main() {
 
             const tokens = lexicalAnalyse(source);
 
-            // Update stats
             let stats = { KEYWORD: 0, IDENTIFIER: 0, NUMBER: 0, STRING: 0, OPERATOR: 0, SEPARATOR: 0, UNKNOWN: 0 };
             tokens.forEach(t => { stats[t.type] = (stats[t.type] || 0) + 1; });
 
@@ -678,7 +649,6 @@ int main() {
             document.getElementById('statSeparators').textContent = stats.SEPARATOR;
             tokenCountBadge.textContent = tokens.length + ' TOKENS';
 
-            // Render tokens
             let html = '';
             tokens.forEach((token, idx) => {
                 html += `
@@ -709,8 +679,7 @@ int main() {
         }
 
         function loadSample() {
-            document.getElementById('sourceCode').value =
-                `int main() {
+            document.getElementById('sourceCode').value = `int main() {
     int a = 10;
     float b = 3.14;
     char name = "Sambit";
