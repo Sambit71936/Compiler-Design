@@ -1,1 +1,1 @@
-https://sambit71936.github.io/Lexical_analyzer/simulation.html
+https://sambit71936.github.io/Lexical/
