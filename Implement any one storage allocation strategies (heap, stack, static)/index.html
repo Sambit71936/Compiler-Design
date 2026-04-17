@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Compiler Design: Heap Storage Allocation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#818cf8;--state-bg:#0f172a;--state-border:#334155;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px}
+.page{max-width:1440px;margin:0 auto}
+header{text-align:center;margin-bottom:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22)}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px}
+.sub{color:var(--muted);font-size:13px;max-width:850px;margin:0 auto;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:980px){.grid{grid-template-columns:1fr 1.15fr}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+textarea{width:100%;min-height:220px;padding:14px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:14px;outline:none;line-height:1.6;letter-spacing:1px;resize:vertical;tab-size:4}
+textarea:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7)}
+select {width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #080f1e; color: #e2e8f0; font-family: Inter, sans-serif; font-size: 13px; outline: none; margin-bottom: 12px; cursor:pointer;}
+select:focus {border-color: var(--accent);}
+.controls{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn-run{background:linear-gradient(135deg,var(--green),#10b981);box-shadow:0 6px 18px rgba(52,211,153,.25)}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:80px}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap}
+.pbtn:first-child{border-radius:8px 0 0 8px}
+.pbtn:last-child{border-radius:0 8px 8px 0}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700}
+.hidden{display:none!important}
+.tw{max-height:600px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;background:#071427;z-index:1}
+th,td{padding:9px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:10.5px}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px}
+.sb{display:inline-block;padding:3px 7px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600;margin:1px;white-space:nowrap}
+
+.parse-summary{display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:8px;margin-bottom:14px}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-value{font-size:22px;font-family:"JetBrains Mono",monospace;font-weight:800;color:var(--accent);letter-spacing:1px;word-break:break-all}
+.stat-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:14px;min-height:160px;max-height:560px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12px}
+.cl{line-height:1.7; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03)}.cl.info{color:var(--muted)}.cl.ok{color:var(--green)}.cl.err{color:var(--red)}.cl.out{color:#e2e8f0}
+.help-box{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:16px;font-size:12.5px;line-height:1.6}
+.help-box h3{color:var(--accent);font-size:13px;margin-bottom:8px}
+
+/* Memory Map Styling */
+.memory-container {width: 100%; height: 480px; display: flex; flex-direction: column; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: #020617; position: relative;}
+.mem-block {width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: "JetBrains Mono", monospace; font-size: 12px; transition: height 0.4s ease-in-out, background 0.3s; border-bottom: 1px solid rgba(0,0,0,0.3); position: relative; overflow: hidden;}
+.mem-free {background: repeating-linear-gradient(45deg, #0f172a, #0f172a 10px, #1e293b 10px, #1e293b 20px); color: var(--muted);}
+.mem-alloc {color: #fff; font-weight: bold;}
+.mem-alloc span.size-badge {font-size: 10px; opacity: 0.8; font-weight: normal; margin-top: 2px;}
+.mem-addr {position: absolute; left: 6px; top: 4px; font-size: 9px; opacity: 0.6; color: #fff;}
+
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">💾 Memory Management</div>
+  <h1>Heap Storage Allocation Strategies</h1>
+  <p class="sub">Simulate dynamic memory allocation using First-Fit, Best-Fit, and Worst-Fit algorithms. Visualize heap fragmentation, coalescing, and block assignments.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">⚙️ Strategy & Commands</div>
+    
+    <label style="font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; font-weight: 600;">Allocation Strategy</label>
+    <select id="strategy-select">
+      <option value="ff">First-Fit (Find first sufficiently large block)</option>
+      <option value="bf">Best-Fit (Find smallest sufficiently large block)</option>
+      <option value="wf">Worst-Fit (Find largest sufficiently large block)</option>
+    </select>
+
+    <label style="font-size: 12px; color: var(--muted); margin-bottom: 6px; margin-top: 6px; display: block; font-weight: 600;">Allocation Script</label>
+    <textarea id="code-input" placeholder="e.g.&#10;alloc A 40&#10;alloc B 20&#10;free A" spellcheck="false">alloc P1 50
+alloc P2 100
+alloc P3 40
+free P2
+alloc P4 60
+alloc P5 30
+free P1
+alloc P6 20</textarea>
+    
+    <div class="controls">
+      <button class="btn btn-run" id="build">⚡ Execute Script</button>
+      <button class="btn-sec" id="demo1">Fragmentation</button>
+      <button class="btn-sec" id="demo2">Coalescing</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    
+    <div class="help-box">
+      <h3>📖 Syntax Guide</h3>
+      <div>• <strong>Allocate:</strong> <code>alloc [Identifier] [Size]</code> (e.g. <code>alloc P1 40</code>).</div>
+      <div>• <strong>Deallocate:</strong> <code>free [Identifier]</code> (e.g. <code>free P1</code>).</div>
+      <div>• Total Heap Size is simulated at <strong>500 bytes</strong>.</div>
+      <div>• Adjacent free blocks are automatically coalesced (merged).</div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="memory">Visual Memory Map</button>
+      <button class="pbtn" data-tab="table">Block Table</button>
+      <button class="pbtn" data-tab="log">Execution Log</button>
+      <button class="pbtn" data-tab="summary">Summary</button>
+    </div>
+    
+    <div id="panel-memory">
+      <div id="mem-map-w" class="memory-container">
+        </div>
+      <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--muted);">Total Capacity: 500 Bytes</div>
+    </div>
+
+    <div id="panel-table" class="hidden">
+      <div class="tw" id="table-w">
+        <div class="empty">Click <b>Execute Script</b> to view memory blocks.</div>
+      </div>
+    </div>
+
+    <div id="panel-log" class="hidden">
+      <div class="console-wrap" id="log-w">
+        <div class="empty" style="padding: 10px;">Click <b>Execute Script</b> to trace execution.</div>
+      </div>
+    </div>
+
+    <div id="panel-summary" class="hidden">
+      <div id="sum-stats">
+        <div class="empty">Click <b>Execute Script</b> to view results.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   STORAGE ALLOCATION ENGINE
+   ═══════════════════════════════════════════════════ */
+const TOTAL_MEM = 500;
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Generate distinct colors based on string
+function stringToColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 45%)`;
+}
+
+function parseAndExecute(text, strategy) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '' && !l.startsWith('//'));
+  
+  let mem = [{ start: 0, size: TOTAL_MEM, id: null, free: true }];
+  let logs = [];
+  let errors = 0;
+
+  function coalesce() {
+    for (let i = mem.length - 2; i >= 0; i--) {
+      if (mem[i].free && mem[i + 1].free) {
+        mem[i].size += mem[i + 1].size;
+        mem.splice(i + 1, 1);
+      }
+    }
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const allocMatch = line.match(/^alloc\s+([a-zA-Z0-9_]+)\s+(\d+)$/i);
+    const freeMatch = line.match(/^free\s+([a-zA-Z0-9_]+)$/i);
+
+    if (allocMatch) {
+      const id = allocMatch[1];
+      const reqSize = parseInt(allocMatch[2], 10);
+      
+      if(reqSize <= 0) {
+        logs.push({ type: 'err', msg: `[Line ${i+1}] Invalid size ${reqSize} for ${id}` });
+        errors++;
+        continue;
+      }
+
+      // Prevent duplicate IDs
+      if (mem.some(b => !b.free && b.id === id)) {
+        logs.push({ type: 'err', msg: `[Line ${i+1}] Identifier '${id}' already exists.` });
+        errors++;
+        continue;
+      }
+
+      let targetIdx = -1;
+
+      // Strategies
+      if (strategy === 'ff') {
+        // First Fit
+        targetIdx = mem.findIndex(b => b.free && b.size >= reqSize);
+      } else if (strategy === 'bf') {
+        // Best Fit
+        let minDiff = Infinity;
+        mem.forEach((b, idx) => {
+          if (b.free && b.size >= reqSize) {
+            if (b.size - reqSize < minDiff) {
+              minDiff = b.size - reqSize;
+              targetIdx = idx;
+            }
+          }
+        });
+      } else if (strategy === 'wf') {
+        // Worst Fit
+        let maxDiff = -1;
+        mem.forEach((b, idx) => {
+          if (b.free && b.size >= reqSize) {
+            if (b.size - reqSize > maxDiff) {
+              maxDiff = b.size - reqSize;
+              targetIdx = idx;
+            }
+          }
+        });
+      }
+
+      if (targetIdx !== -1) {
+        let block = mem[targetIdx];
+        if (block.size > reqSize) {
+          // Split block
+          mem.splice(targetIdx, 1, 
+            { start: block.start, size: reqSize, id: id, free: false },
+            { start: block.start + reqSize, size: block.size - reqSize, id: null, free: true }
+          );
+        } else {
+          // Exact fit
+          block.free = false;
+          block.id = id;
+        }
+        logs.push({ type: 'ok', msg: `[Line ${i+1}] Allocated ${reqSize}B to '${id}'` });
+      } else {
+        logs.push({ type: 'err', msg: `[Line ${i+1}] Out of Memory / Fragmentation: Cannot allocate ${reqSize}B for '${id}'` });
+        errors++;
+      }
+
+    } else if (freeMatch) {
+      const id = freeMatch[1];
+      let found = false;
+      mem.forEach(b => {
+        if (!b.free && b.id === id) {
+          b.free = true;
+          b.id = null;
+          found = true;
+        }
+      });
+
+      if (found) {
+        coalesce();
+        logs.push({ type: 'info', msg: `[Line ${i+1}] Freed block '${id}'` });
+      } else {
+        logs.push({ type: 'warn', msg: `[Line ${i+1}] Free failed: Identifier '${id}' not found.` });
+        errors++;
+      }
+    } else {
+      logs.push({ type: 'err', msg: `[Line ${i+1}] Syntax Error: Unrecognized command '${line}'` });
+      errors++;
+    }
+  }
+
+  // Calculate stats
+  let used = 0, free = 0, fragments = 0;
+  mem.forEach(b => {
+    if (b.free) {
+      free += b.size;
+      fragments++;
+    } else {
+      used += b.size;
+    }
+  });
+
+  return { mem, logs, used, free, fragments, errors };
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERING FUNCTIONS
+   ═══════════════════════════════════════════════════ */
+function renderMemoryMap(mem, container) {
+  let html = '';
+  mem.forEach(b => {
+    let pct = (b.size / TOTAL_MEM) * 100;
+    if (pct < 0.5) pct = 0.5; // Ensure minimum visibility
+    
+    if (b.free) {
+      html += `<div class="mem-block mem-free" style="height: ${pct}%">
+                 <div class="mem-addr">0x${b.start.toString(16).toUpperCase().padStart(3, '0')}</div>
+                 ${b.size >= 15 ? `<span style="opacity:0.5">${b.size}B Free</span>` : ''}
+               </div>`;
+    } else {
+      let color = stringToColor(b.id);
+      html += `<div class="mem-block mem-alloc" style="height: ${pct}%; background: ${color}">
+                 <div class="mem-addr">0x${b.start.toString(16).toUpperCase().padStart(3, '0')}</div>
+                 ${esc(b.id)}
+                 <span class="size-badge">${b.size}B</span>
+               </div>`;
+    }
+  });
+  container.innerHTML = html;
+}
+
+function renderTable(mem, container) {
+  let h = `<table><thead>
+    <tr><th colspan="5" class="th-group">Heap Memory Segments</th></tr>
+    <tr><th>Address</th><th>Status</th><th>Identifier</th><th>Size (Bytes)</th><th>% of Heap</th></tr>
+    </thead><tbody>`;
+  
+  if(mem.length === 0) h += `<tr><td colspan="5" class="empty">Memory is empty.</td></tr>`;
+
+  mem.forEach(b => {
+    let addr = `0x${b.start.toString(16).toUpperCase().padStart(3, '0')}`;
+    let pct = ((b.size / TOTAL_MEM) * 100).toFixed(1);
+    
+    if (b.free) {
+      h += `<tr>
+        <td class="val" style="color:var(--muted)">${addr}</td>
+        <td class="val"><span style="color:var(--muted)">Free</span></td>
+        <td class="val" style="color:var(--muted)">—</td>
+        <td class="val" style="color:var(--muted)">${b.size}</td>
+        <td class="val" style="color:var(--muted)">${pct}%</td>
+      </tr>`;
+    } else {
+      h += `<tr>
+        <td class="val">${addr}</td>
+        <td class="val"><span style="color:var(--green)">Allocated</span></td>
+        <td class="val" style="font-weight:bold; color:var(--accent)">${esc(b.id)}</td>
+        <td class="val">${b.size}</td>
+        <td class="val">${pct}%</td>
+      </tr>`;
+    }
+  });
+  h += `</tbody></table>`;
+  container.innerHTML = h;
+}
+
+function renderLog(logs, container) {
+  let h = `<div class="cl out" style="padding-bottom:8px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom:8px;">// Allocation Execution Trace</div>`;
+  if(logs.length === 0) {
+    h += `<div class="cl info">No commands executed.</div>`;
+  } else {
+    logs.forEach(l => {
+      let icon = l.type === 'ok' ? '✅' : (l.type === 'err' ? '❌' : (l.type === 'warn' ? '⚠️' : '🔹'));
+      h += `<div class="cl ${l.type}">${icon} ${esc(l.msg)}</div>`;
+    });
+  }
+  container.innerHTML = h;
+}
+
+function renderSummary(res, container) {
+  let utilPct = ((res.used / TOTAL_MEM) * 100).toFixed(1);
+
+  let h = `
+    <div class="parse-summary">
+      <div class="stat-card">
+        <div class="stat-label">Memory Utilization</div>
+        <div class="stat-value" style="color:var(--accent)">${utilPct}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Used / Free (Bytes)</div>
+        <div class="stat-value" style="color:var(--text)">${res.used} / ${res.free}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Free Fragments</div>
+        <div class="stat-value" style="color:${res.fragments > 1 ? 'var(--orange)' : 'var(--green)'}">${res.fragments}</div>
+      </div>
+    </div>
+  `;
+
+  if (res.errors > 0) {
+    h += `<div style="background: rgba(239,68,68,0.1); border: 1px solid var(--red); padding: 12px; border-radius: 8px; color: var(--red); font-size: 13px; text-align:center; font-weight: bold;">
+      ⚠️ Completed with ${res.errors} Error(s). Check the Execution Log.
+    </div>`;
+  } else {
+     h += `<div style="background: rgba(52,211,153,0.1); border: 1px solid var(--green); padding: 12px; border-radius: 8px; color: var(--green); font-size: 13px; text-align:center; font-weight: bold;">
+      ✅ Script executed successfully with 0 errors.
+    </div>`;
+  }
+
+  container.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE & EVENTS
+   ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    ['memory', 'table', 'log', 'summary'].forEach(p => {
+      document.getElementById('panel-' + p).classList.toggle('hidden', p !== target);
+    });
+  });
+});
+
+document.getElementById('build').addEventListener('click', () => {
+  const code = document.getElementById('code-input').value;
+  const strategy = document.getElementById('strategy-select').value;
+  const status = document.getElementById('status');
+  
+  try {
+    if (!code.trim()) {
+      status.textContent = 'Error: Empty script.';
+      return;
+    }
+
+    // Process
+    const result = parseAndExecute(code, strategy);
+
+    // Render
+    renderMemoryMap(result.mem, document.getElementById('mem-map-w'));
+    renderTable(result.mem, document.getElementById('table-w'));
+    renderLog(result.logs, document.getElementById('log-w'));
+    renderSummary(result, document.getElementById('sum-stats'));
+
+    if (result.errors === 0) {
+      status.textContent = `✅ Success: Used ${result.used}B / Free ${result.free}B`;
+    } else {
+      status.textContent = `⚠️ Finished with ${result.errors} errors.`;
+    }
+    
+    document.querySelector('[data-tab="memory"]').click();
+    
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message; 
+    console.error(e);
+  }
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('code-input').value = ''; 
+  document.getElementById('status').textContent = 'Ready';
+  
+  // Reset visual state
+  document.getElementById('mem-map-w').innerHTML = `<div class="mem-block mem-free" style="height: 100%">
+                 <div class="mem-addr">0x000</div><span style="opacity:0.5">500B Free</span></div>`;
+  document.getElementById('table-w').innerHTML = '<div class="empty">Click <b>Execute Script</b> to view memory blocks.</div>';
+  document.getElementById('log-w').innerHTML = '<div class="empty" style="padding: 10px;">Click <b>Execute Script</b> to trace execution.</div>';
+  document.getElementById('sum-stats').innerHTML = '<div class="empty">Click <b>Execute Script</b> to view results.</div>';
+});
+
+/* DEMOS */
+document.getElementById('demo1').addEventListener('click', () => {
+  document.getElementById('strategy-select').value = 'ff';
+  document.getElementById('code-input').value = `alloc P1 50\nalloc P2 100\nalloc P3 40\nfree P2\nalloc P4 60\nalloc P5 30\nfree P1\nalloc P6 20`;
+  document.getElementById('build').click();
+});
+
+document.getElementById('demo2').addEventListener('click', () => {
+  document.getElementById('strategy-select').value = 'ff';
+  document.getElementById('code-input').value = `alloc A 100\nalloc B 100\nalloc C 100\nalloc D 100\nfree B\nfree C\n// B and C are merged back to 200B\nalloc E 150`;
+  document.getElementById('build').click();
+});
+
+// Run default layout
+document.getElementById('build').click();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Left Recursion Removal & Left Factoring — Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#6ee7b7;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#a5b4fc;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px;}
+.page{max-width:1400px;margin:0 auto;}
+header{text-align:center;margin-bottom:22px;}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22);}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px;}
+.sub{color:var(--muted);font-size:13px;max-width:750px;margin:0 auto;}
+.grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:960px){.grid{grid-template-columns:1fr 1fr;}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.card-title .icon{font-size:16px;}
+textarea{width:100%;min-height:200px;padding:12px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:13px;resize:vertical;outline:none;tab-size:4;line-height:1.7;}
+textarea:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7);}
+.controls{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s;}
+.btn:hover{filter:brightness(1.1);}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px;}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px;}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:100px;}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap;}
+.pbtn{padding:7px 12px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap;}
+.pbtn:first-child{border-radius:8px 0 0 8px;}
+.pbtn:last-child{border-radius:0 8px 8px 0;}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700;}
+.hidden{display:none !important;}
+/* Console */
+.console{border-radius:10px;border:1px solid var(--border);background:#020617;padding:0;min-height:300px;max-height:560px;overflow:auto;}
+.console-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.02);}
+.console-dot{width:10px;height:10px;border-radius:50%;}
+.console-body{padding:16px;font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.8;}
+/* Grammar lines */
+.g-line{margin-bottom:2px;}
+.g-nt{color:var(--accent);font-weight:700;}
+.g-arrow{color:var(--muted);margin:0 6px;}
+.g-t{color:var(--yellow);}
+.g-eps{color:var(--pink);font-style:italic;}
+.g-pipe{color:var(--muted);margin:0 4px;}
+.g-new{color:var(--green);font-weight:700;}
+/* Steps */
+.step{margin-bottom:14px;padding:14px;border-radius:10px;border-left:3px solid;background:rgba(255,255,255,.015);}
+.step-lr{border-color:var(--orange);}
+.step-lf{border-color:var(--purple);}
+.step-title{font-weight:700;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.step-lr .step-title{color:var(--orange);}
+.step-lf .step-title{color:var(--purple);}
+.step-before,.step-after{padding:8px 12px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:12px;margin-bottom:4px;white-space:pre-wrap;line-height:1.6;}
+.step-before{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.1);color:var(--red);}
+.step-after{background:rgba(110,231,183,.06);border:1px solid rgba(110,231,183,.1);color:var(--green);}
+.step-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:var(--muted);}
+.step-explain{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;}
+/* Summary */
+.parse-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px;}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.stat-value{font-size:22px;font-weight:800;color:var(--accent);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+/* Table */
+.tw{max-height:400px;overflow:auto;border-radius:8px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead{position:sticky;top:0;background:#071427;z-index:1;}
+th,td{padding:8px 12px;font-size:12px;text-align:left;border-bottom:1px solid var(--border);}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:11px;}
+td{font-family:"JetBrains Mono",monospace;color:#cbd5e1;}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px;}
+/* FIRST/FOLLOW badges */
+.ff-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;margin:2px;}
+.ff-terminal{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.2);}
+.ff-epsilon{background:rgba(244,114,182,.1);color:var(--pink);border:1px solid rgba(244,114,182,.2);}
+.ff-dollar{background:rgba(192,132,252,.1);color:var(--purple);border:1px solid rgba(192,132,252,.2);}
+/* Parsing table cell */
+.pt-cell{font-size:11px;font-family:"JetBrains Mono",monospace;padding:6px 8px;}
+.pt-empty{color:#334155;}
+.pt-prod{color:var(--green);font-weight:600;}
+.pt-conflict{color:var(--red);font-weight:700;background:rgba(239,68,68,.06);}
+footer{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px;}
+/* Info box */
+.info-box{background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.15);border-radius:10px;padding:14px;margin-bottom:14px;font-size:12px;line-height:1.6;color:var(--muted);}
+.info-box strong{color:var(--accent);}
+.info-box code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--yellow);}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">🔄 Grammar Transformer</div>
+  <h1>Left Recursion Removal & Left Factoring</h1>
+  <p class="sub">Enter a context-free grammar → remove left recursion → apply left factoring → compute FIRST & FOLLOW sets → build LL(1) parsing table. All in the browser.</p>
+</header>
+<div class="grid">
+  <!-- LEFT: Input -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📝</span> Input Grammar</div>
+    <div class="info-box">
+      <strong>Format:</strong> One production per line. Use <code>→</code> or <code>-></code> for arrow. Separate alternatives with <code>|</code>. Use <code>ε</code> or <code>epsilon</code> for empty string. Non-terminals are UPPERCASE, terminals are lowercase or symbols.<br><br>
+      <strong>Example:</strong><br>
+      <code>E → E + T | T</code><br>
+      <code>T → T * F | F</code><br>
+      <code>F → ( E ) | id</code>
+    </div>
+    <textarea id="code" spellcheck="false">E → E + T | T
+T → T * F | F
+F → ( E ) | id</textarea>
+    <div class="controls">
+      <button class="btn" id="run">🔄 Transform</button>
+      <button class="btn-sec" id="demo1">Demo: Expr</button>
+      <button class="btn-sec" id="demo2">Demo: Stmt</button>
+      <button class="btn-sec" id="demo3">Demo: Dangling</button>
+      <button class="btn-sec" id="demo4">Demo: Mixed</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: Output -->
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="out">▶ Output</button>
+      <button class="pbtn" data-tab="steps">📋 Steps</button>
+      <button class="pbtn" data-tab="ff">FIRST/FOLLOW</button>
+      <button class="pbtn" data-tab="pt">LL(1) Table</button>
+      <button class="pbtn" data-tab="summary">📊 Summary</button>
+    </div>
+
+    <!-- Output Console -->
+    <div id="panel-out">
+      <div class="console" id="console-out">
+        <div class="console-header">
+          <span class="console-dot" style="background:var(--red)"></span>
+          <span class="console-dot" style="background:var(--yellow)"></span>
+          <span class="console-dot" style="background:var(--green)"></span>
+          <span style="color:var(--muted);font-size:12px;margin-left:8px">Transformed Grammar</span>
+        </div>
+        <div class="console-body" id="output-body">
+          <div class="empty">Click <b>Transform</b> to process your grammar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div id="panel-steps" class="hidden">
+      <div id="steps-body" style="max-height:520px;overflow:auto">
+        <div class="empty">Click <b>Transform</b> to see steps.</div>
+      </div>
+    </div>
+
+    <!-- FIRST / FOLLOW -->
+    <div id="panel-ff" class="hidden">
+      <div class="card-title"><span class="icon">🎯</span> FIRST Sets</div>
+      <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Non-Terminal</th><th>FIRST Set</th></tr></thead><tbody id="first-tb"><tr><td colspan="2" class="empty">Click <b>Transform</b>.</td></tr></tbody></table></div>
+      <div class="card-title"><span class="icon">👁️</span> FOLLOW Sets</div>
+      <div class="tw"><table><thead><tr><th>Non-Terminal</th><th>FOLLOW Set</th></tr></thead><tbody id="follow-tb"><tr><td colspan="2" class="empty">Click <b>Transform</b>.</td></tr></tbody></table></div>
+    </div>
+
+    <!-- LL(1) Parsing Table -->
+    <div id="panel-pt" class="hidden">
+      <div class="card-title"><span class="icon">📊</span> LL(1) Predictive Parsing Table</div>
+      <div class="tw" id="pt-wrap"><div class="empty">Click <b>Transform</b>.</div></div>
+    </div>
+
+    <!-- Summary -->
+    <div id="panel-summary" class="hidden">
+      <div class="parse-summary" id="sum-stats"></div>
+      <div class="card-title" style="margin-top:10px"><span class="icon">📋</span> All Productions (Final)</div>
+      <div class="tw"><table><thead><tr><th>#</th><th>Non-Terminal</th><th>Production</th></tr></thead><tbody id="prod-tb"><tr><td colspan="3" class="empty">Click <b>Transform</b>.</td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+<footer>
+  <div>Name: <strong>Chandresh G U</strong></div>
+  <div>Registration Number: <strong>RA2311003050021</strong></div>
+</footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   GRAMMAR PARSER
+   ═══════════════════════════════════════════════════════ */
+function parseGrammar(text) {
+  const productions = {}; // { NT: [ [sym1, sym2, ...], [...], ... ] }
+  const order = [];
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//'));
+  for (const line of lines) {
+    const m = line.match(/^(\S+)\s*(?:→|->)\s*(.+)$/);
+    if (!m) continue;
+    const nt = m[1];
+    if (!productions[nt]) { productions[nt] = []; order.push(nt); }
+    const alts = m[2].split('|').map(a => a.trim());
+    for (const alt of alts) {
+      const syms = alt.split(/\s+/).filter(s => s);
+      const norm = syms.map(s => (s === 'epsilon' || s === 'eps') ? 'ε' : s);
+      productions[nt].push(norm);
+    }
+  }
+  return { productions, order };
+}
+
+function isNT(s) { return /^[A-Z]/.test(s) && s !== 'ε'; }
+
+function prodToStr(nt, rhs) {
+  return nt + ' → ' + rhs.map(a => a.join(' ')).join(' | ');
+}
+
+function cloneProductions(prods) {
+  const c = {};
+  for (const nt in prods) c[nt] = prods[nt].map(a => [...a]);
+  return c;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 1: LEFT RECURSION REMOVAL
+   ═══════════════════════════════════════════════════════ */
+function removeLeftRecursion(productions, order) {
+  const steps = [];
+  const prods = cloneProductions(productions);
+  const newOrder = [...order];
+
+  // Immediate left recursion removal for each NT
+  for (const A of [...newOrder]) {
+    const alts = prods[A] || [];
+    const recursive = [];   // α parts: A → A α
+    const nonRecursive = []; // β parts: A → β (where β doesn't start with A)
+
+    for (const alt of alts) {
+      if (alt[0] === A) {
+        recursive.push(alt.slice(1)); // α
+      } else {
+        nonRecursive.push(alt);
+      }
+    }
+
+    if (recursive.length === 0) continue; // No left recursion for this NT
+
+    // Create A'
+    let newNT = A + "'";
+    while (prods[newNT]) newNT += "'";
+
+    const beforeStr = prodToStr(A, alts);
+
+    // A → β1 A' | β2 A' | ...
+    prods[A] = nonRecursive.map(beta => {
+      if (beta.length === 1 && beta[0] === 'ε') return [newNT];
+      return [...beta, newNT];
+    });
+
+    // A' → α1 A' | α2 A' | ... | ε
+    prods[newNT] = recursive.map(alpha => [...alpha, newNT]);
+    prods[newNT].push(['ε']);
+
+    // Insert new NT right after A
+    const idx = newOrder.indexOf(A);
+    newOrder.splice(idx + 1, 0, newNT);
+
+    const afterStr = prodToStr(A, prods[A]) + '\n' + prodToStr(newNT, prods[newNT]);
+
+    steps.push({
+      type: 'lr',
+      nt: A,
+      title: `Remove left recursion from ${A}`,
+      before: beforeStr,
+      after: afterStr,
+      explain: `"${A} → ${A} ..." is left-recursive. Split into non-recursive alternatives (with new non-terminal ${newNT}) and an ε-producing tail ${newNT}.`
+    });
+  }
+
+  return { productions: prods, order: newOrder, steps };
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 2: LEFT FACTORING
+   ═══════════════════════════════════════════════════════ */
+function leftFactor(productions, order) {
+  const steps = [];
+  const prods = cloneProductions(productions);
+  const newOrder = [...order];
+  let changed = true;
+  let safety = 0;
+
+  while (changed && safety < 50) {
+    changed = false;
+    safety++;
+    for (const A of [...newOrder]) {
+      const alts = prods[A] || [];
+      if (alts.length < 2) continue;
+
+      // Find longest common prefix among any group
+      const prefixGroups = {};
+      for (const alt of alts) {
+        const first = alt[0] || '';
+        if (!prefixGroups[first]) prefixGroups[first] = [];
+        prefixGroups[first].push(alt);
+      }
+
+      for (const key in prefixGroups) {
+        const group = prefixGroups[key];
+        if (group.length < 2) continue;
+
+        // Find longest common prefix
+        let prefixLen = 0;
+        outer: for (let i = 0; i < group[0].length; i++) {
+          const sym = group[0][i];
+          for (let j = 1; j < group.length; j++) {
+            if (i >= group[j].length || group[j][i] !== sym) break outer;
+          }
+          prefixLen = i + 1;
+        }
+
+        if (prefixLen === 0) continue;
+
+        const prefix = group[0].slice(0, prefixLen);
+        let newNT = A + "'";
+        while (prods[newNT]) newNT += "'";
+
+        const beforeStr = prodToStr(A, alts);
+
+        // Build new alternatives for A'
+        const newAlts = [];
+        for (const alt of group) {
+          const rest = alt.slice(prefixLen);
+          newAlts.push(rest.length > 0 ? rest : ['ε']);
+        }
+
+        // Rebuild A: keep non-grouped alts + the factored one
+        const remaining = alts.filter(a => !group.includes(a));
+        remaining.push([...prefix, newNT]);
+        prods[A] = remaining;
+        prods[newNT] = newAlts;
+
+        const idx = newOrder.indexOf(A);
+        if (!newOrder.includes(newNT)) newOrder.splice(idx + 1, 0, newNT);
+
+        const afterStr = prodToStr(A, prods[A]) + '\n' + prodToStr(newNT, prods[newNT]);
+
+        steps.push({
+          type: 'lf',
+          nt: A,
+          title: `Left factor ${A} (common prefix: ${prefix.join(' ')})`,
+          before: beforeStr,
+          after: afterStr,
+          explain: `Alternatives of ${A} share common prefix "${prefix.join(' ')}". Extract it and introduce ${newNT} for the remaining suffixes.`
+        });
+
+        changed = true;
+        break; // Restart for this NT
+      }
+      if (changed) break; // Restart from beginning
+    }
+  }
+
+  return { productions: prods, order: newOrder, steps };
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 3: FIRST & FOLLOW SETS
+   ═══════════════════════════════════════════════════════ */
+function computeFirst(productions, order) {
+  const first = {};
+  for (const nt of order) first[nt] = new Set();
+
+  let changed = true;
+  let safety = 0;
+  while (changed && safety < 100) {
+    changed = false;
+    safety++;
+    for (const A of order) {
+      for (const alt of (productions[A] || [])) {
+        if (alt.length === 1 && alt[0] === 'ε') {
+          if (!first[A].has('ε')) { first[A].add('ε'); changed = true; }
+          continue;
+        }
+        let allEps = true;
+        for (const sym of alt) {
+          if (sym === 'ε') continue;
+          if (!isNT(sym)) {
+            // terminal
+            if (!first[A].has(sym)) { first[A].add(sym); changed = true; }
+            allEps = false;
+            break;
+          } else {
+            // non-terminal
+            const f = first[sym] || new Set();
+            for (const x of f) {
+              if (x !== 'ε' && !first[A].has(x)) { first[A].add(x); changed = true; }
+            }
+            if (!f.has('ε')) { allEps = false; break; }
+          }
+        }
+        if (allEps) {
+          if (!first[A].has('ε')) { first[A].add('ε'); changed = true; }
+        }
+      }
+    }
+  }
+  return first;
+}
+
+function computeFollow(productions, order, first) {
+  const follow = {};
+  for (const nt of order) follow[nt] = new Set();
+  follow[order[0]].add('$');
+
+  let changed = true;
+  let safety = 0;
+  while (changed && safety < 100) {
+    changed = false;
+    safety++;
+    for (const A of order) {
+      for (const alt of (productions[A] || [])) {
+        for (let i = 0; i < alt.length; i++) {
+          const B = alt[i];
+          if (!isNT(B)) continue;
+          if (!follow[B]) follow[B] = new Set();
+
+          // Look at what follows B in this production
+          let j = i + 1;
+          let allEps = true;
+          while (j < alt.length) {
+            const next = alt[j];
+            if (next === 'ε') { j++; continue; }
+            if (!isNT(next)) {
+              if (!follow[B].has(next)) { follow[B].add(next); changed = true; }
+              allEps = false;
+              break;
+            } else {
+              const f = first[next] || new Set();
+              for (const x of f) {
+                if (x !== 'ε' && !follow[B].has(x)) { follow[B].add(x); changed = true; }
+              }
+              if (!f.has('ε')) { allEps = false; break; }
+            }
+            j++;
+          }
+          if (allEps) {
+            // B is at end or everything after derives ε → add FOLLOW(A)
+            for (const x of follow[A]) {
+              if (!follow[B].has(x)) { follow[B].add(x); changed = true; }
+            }
+          }
+        }
+      }
+    }
+  }
+  return follow;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHASE 4: LL(1) PARSING TABLE
+   ═══════════════════════════════════════════════════════ */
+function firstOfString(symbols, first) {
+  const result = new Set();
+  let allEps = true;
+  for (const sym of symbols) {
+    if (sym === 'ε') continue;
+    if (!isNT(sym)) {
+      result.add(sym);
+      allEps = false;
+      break;
+    } else {
+      const f = first[sym] || new Set();
+      for (const x of f) { if (x !== 'ε') result.add(x); }
+      if (!f.has('ε')) { allEps = false; break; }
+    }
+  }
+  if (allEps) result.add('ε');
+  return result;
+}
+
+function buildParsingTable(productions, order, first, follow) {
+  // Collect all terminals
+  const terminals = new Set();
+  for (const nt of order) {
+    for (const alt of (productions[nt] || [])) {
+      for (const sym of alt) {
+        if (sym !== 'ε' && !isNT(sym)) terminals.add(sym);
+      }
+    }
+  }
+  terminals.add('$');
+  const termList = [...terminals].sort();
+
+  const table = {}; // table[NT][terminal] = [productions]
+  const conflicts = [];
+
+  for (const A of order) {
+    table[A] = {};
+    for (const t of termList) table[A][t] = [];
+
+    for (const alt of (productions[A] || [])) {
+      const fst = firstOfString(alt, first);
+      for (const a of fst) {
+        if (a !== 'ε') {
+          const prod = A + ' → ' + alt.join(' ');
+          table[A][a].push(prod);
+          if (table[A][a].length > 1) conflicts.push({ nt: A, terminal: a, prods: [...table[A][a]] });
+        }
+      }
+      if (fst.has('ε')) {
+        const fl = follow[A] || new Set();
+        for (const b of fl) {
+          const prod = A + ' → ' + alt.join(' ');
+          table[A][b].push(prod);
+          if (table[A][b].length > 1) conflicts.push({ nt: A, terminal: b, prods: [...table[A][b]] });
+        }
+      }
+    }
+  }
+
+  return { table, termList, conflicts };
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDERING
+   ═══════════════════════════════════════════════════════ */
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderGrammar(productions, order, container) {
+  let html = '';
+  for (const nt of order) {
+    const alts = productions[nt] || [];
+    html += '<div class="g-line">';
+    const ntClass = nt.includes("'") ? 'g-new' : 'g-nt';
+    html += `<span class="${ntClass}">${esc(nt)}</span>`;
+    html += '<span class="g-arrow">→</span>';
+    const parts = alts.map(alt => {
+      return alt.map(sym => {
+        if (sym === 'ε') return '<span class="g-eps">ε</span>';
+        if (isNT(sym)) {
+          const c = sym.includes("'") ? 'g-new' : 'g-nt';
+          return `<span class="${c}">${esc(sym)}</span>`;
+        }
+        return `<span class="g-t">${esc(sym)}</span>`;
+      }).join(' ');
+    });
+    html += parts.join('<span class="g-pipe"> | </span>');
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderSteps(allSteps, container) {
+  if (!allSteps.length) {
+    container.innerHTML = '<div class="empty">✅ No transformations needed — grammar is already suitable!</div>';
+    return;
+  }
+  let html = '';
+  allSteps.forEach((s, i) => {
+    const cls = s.type === 'lr' ? 'step-lr' : 'step-lf';
+    const icon = s.type === 'lr' ? '🔄' : '🔀';
+    html += `<div class="step ${cls}">`;
+    html += `<div class="step-title">${icon} Step ${i + 1}: ${esc(s.title)}</div>`;
+    html += `<div class="step-label" style="color:var(--red)">Before</div>`;
+    html += `<div class="step-before">${esc(s.before)}</div>`;
+    html += `<div class="step-label" style="color:var(--green)">After</div>`;
+    html += `<div class="step-after">${esc(s.after)}</div>`;
+    html += `<div class="step-explain">💡 ${esc(s.explain)}</div>`;
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function renderFF(first, follow, order) {
+  const ftb = document.getElementById('first-tb');
+  const fltb = document.getElementById('follow-tb');
+  ftb.innerHTML = '';
+  fltb.innerHTML = '';
+  for (const nt of order) {
+    // FIRST
+    let tr = document.createElement('tr');
+    tr.innerHTML = `<td style="color:var(--accent);font-weight:700">${esc(nt)}</td><td>${
+      [...(first[nt] || [])].sort().map(s => {
+        if (s === 'ε') return '<span class="ff-badge ff-epsilon">ε</span>';
+        return `<span class="ff-badge ff-terminal">${esc(s)}</span>`;
+      }).join(' ')
+    }</td>`;
+    ftb.appendChild(tr);
+    // FOLLOW
+    tr = document.createElement('tr');
+    tr.innerHTML = `<td style="color:var(--accent);font-weight:700">${esc(nt)}</td><td>${
+      [...(follow[nt] || [])].sort().map(s => {
+        if (s === '$') return '<span class="ff-badge ff-dollar">$</span>';
+        return `<span class="ff-badge ff-terminal">${esc(s)}</span>`;
+      }).join(' ')
+    }</td>`;
+    fltb.appendChild(tr);
+  }
+}
+
+function renderParsingTable(ptData, order) {
+  const wrap = document.getElementById('pt-wrap');
+  if (!ptData) { wrap.innerHTML = '<div class="empty">Click <b>Transform</b>.</div>'; return; }
+  const { table, termList, conflicts } = ptData;
+  let html = '<table><thead><tr><th>NT</th>';
+  for (const t of termList) html += `<th>${esc(t)}</th>`;
+  html += '</tr></thead><tbody>';
+  for (const nt of order) {
+    html += `<tr><td style="color:var(--accent);font-weight:700">${esc(nt)}</td>`;
+    for (const t of termList) {
+      const entries = table[nt]?.[t] || [];
+      if (entries.length === 0) {
+        html += '<td class="pt-cell pt-empty">—</td>';
+      } else if (entries.length === 1) {
+        html += `<td class="pt-cell pt-prod">${esc(entries[0])}</td>`;
+      } else {
+        html += `<td class="pt-cell pt-conflict" title="CONFLICT!">${entries.map(e => esc(e)).join('<br>')}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  if (conflicts.length > 0) {
+    html += `<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);color:var(--red);font-size:12px">`;
+    html += `<strong>⚠️ ${conflicts.length} conflict(s) detected</strong> — Grammar is NOT LL(1).<br>`;
+    const seen = new Set();
+    for (const c of conflicts) {
+      const key = c.nt + ',' + c.terminal;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      html += `• M[${esc(c.nt)}, ${esc(c.terminal)}] has multiple entries<br>`;
+    }
+    html += '</div>';
+  } else {
+    html += `<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(110,231,183,.06);border:1px solid rgba(110,231,183,.15);color:var(--green);font-size:12px">✅ <strong>No conflicts</strong> — Grammar is LL(1)!</div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function renderSummary(data) {
+  const st = document.getElementById('sum-stats');
+  const isLL1 = data.conflicts === 0;
+  st.innerHTML = `
+    <div class="stat-card"><div class="stat-value">${data.origProds}</div><div class="stat-label">Original Prods</div></div>
+    <div class="stat-card"><div class="stat-value">${data.finalProds}</div><div class="stat-label">Final Prods</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--orange)">${data.lrSteps}</div><div class="stat-label">LR Removed</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--purple)">${data.lfSteps}</div><div class="stat-label">Left Factored</div></div>
+    <div class="stat-card"><div class="stat-value">${data.nts}</div><div class="stat-label">Non-Terminals</div></div>
+    <div class="stat-card"><div class="stat-value">${data.terminals}</div><div class="stat-label">Terminals</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${isLL1 ? 'var(--green)' : 'var(--red)'}">${isLL1 ? 'YES' : 'NO'}</div><div class="stat-label">LL(1)?</div></div>
+  `;
+
+  // Productions table
+  const tb = document.getElementById('prod-tb');
+  tb.innerHTML = '';
+  let n = 0;
+  for (const nt of data.order) {
+    for (const alt of (data.productions[nt] || [])) {
+      n++;
+      const tr = document.createElement('tr');
+      const rhsHtml = alt.map(sym => {
+        if (sym === 'ε') return '<span style="color:var(--pink);font-style:italic">ε</span>';
+        if (isNT(sym)) return `<span style="color:var(--accent);font-weight:700">${esc(sym)}</span>`;
+        return `<span style="color:var(--yellow)">${esc(sym)}</span>`;
+      }).join(' ');
+      tr.innerHTML = `<td style="color:var(--muted)">${n}</td><td style="color:var(--accent);font-weight:700">${esc(nt)}</td><td>${rhsHtml}</td>`;
+      tb.appendChild(tr);
+    }
+  }
+}
+
+/* ═══════════════════ TABS ═══════════════════ */
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    ['out', 'steps', 'ff', 'pt', 'summary'].forEach(p => {
+      document.getElementById('panel-' + p).classList.toggle('hidden', p !== target);
+    });
+  });
+});
+
+/* ═══════════════════ MAIN TRANSFORM ═══════════════════ */
+document.getElementById('run').addEventListener('click', () => {
+  const code = document.getElementById('code').value;
+  const status = document.getElementById('status');
+  status.textContent = 'Processing…';
+
+  try {
+    // Parse
+    const { productions: origProds, order: origOrder } = parseGrammar(code);
+    if (origOrder.length === 0) { status.textContent = 'No valid grammar found.'; return; }
+
+    const origProdCount = Object.values(origProds).reduce((s, a) => s + a.length, 0);
+
+    // Phase 1: Remove left recursion
+    const lr = removeLeftRecursion(origProds, origOrder);
+
+    // Phase 2: Left factoring
+    const lf = leftFactor(lr.productions, lr.order);
+
+    const finalProds = lf.productions;
+    const finalOrder = lf.order;
+    const allSteps = [...lr.steps, ...lf.steps];
+
+    // Phase 3: FIRST & FOLLOW
+    const first = computeFirst(finalProds, finalOrder);
+    const follow = computeFollow(finalProds, finalOrder, first);
+
+    // Phase 4: LL(1) Parsing Table
+    const ptData = buildParsingTable(finalProds, finalOrder, first, follow);
+
+    // Count
+    const finalProdCount = Object.values(finalProds).reduce((s, a) => s + a.length, 0);
+    const terminals = new Set();
+    for (const nt of finalOrder) {
+      for (const alt of (finalProds[nt] || [])) {
+        for (const sym of alt) { if (sym !== 'ε' && !isNT(sym)) terminals.add(sym); }
+      }
+    }
+
+    // Render original + transformed
+    const outBody = document.getElementById('output-body');
+    let outHtml = '<div style="margin-bottom:14px">';
+    outHtml += '<div style="font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📥 Original Grammar</div>';
+    outHtml += '<div style="padding:10px;border-radius:8px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.08);margin-bottom:14px" id="orig-g"></div>';
+    outHtml += '<div style="font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📤 Transformed Grammar (LR removed + Left factored)</div>';
+    outHtml += '<div style="padding:10px;border-radius:8px;background:rgba(110,231,183,.04);border:1px solid rgba(110,231,183,.08)" id="final-g"></div>';
+    outHtml += '</div>';
+
+    if (allSteps.length === 0) {
+      outHtml += '<div style="padding:10px;border-radius:8px;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.12);color:var(--accent);font-size:12px">✅ Grammar has no left recursion and no common prefixes — no changes needed!</div>';
+    } else {
+      outHtml += `<div style="color:var(--muted);font-size:12px">${allSteps.length} transformation(s) applied. See <strong>Steps</strong> tab for details.</div>`;
+    }
+    outBody.innerHTML = outHtml;
+    renderGrammar(origProds, origOrder, document.getElementById('orig-g'));
+    renderGrammar(finalProds, finalOrder, document.getElementById('final-g'));
+
+    // Steps
+    renderSteps(allSteps, document.getElementById('steps-body'));
+
+    // FIRST/FOLLOW
+    renderFF(first, follow, finalOrder);
+
+    // Parsing Table
+    renderParsingTable(ptData, finalOrder);
+
+    // Unique conflicts
+    const uniqueConflicts = new Set();
+    for (const c of ptData.conflicts) uniqueConflicts.add(c.nt + ',' + c.terminal);
+
+    // Summary
+    renderSummary({
+      origProds: origProdCount,
+      finalProds: finalProdCount,
+      lrSteps: lr.steps.length,
+      lfSteps: lf.steps.length,
+      nts: finalOrder.length,
+      terminals: terminals.size,
+      conflicts: uniqueConflicts.size,
+      productions: finalProds,
+      order: finalOrder
+    });
+
+    const isLL1 = uniqueConflicts.size === 0;
+    status.textContent = `✅ Done — ${lr.steps.length} LR removal(s), ${lf.steps.length} left factoring(s), ${isLL1 ? 'LL(1) ✓' : 'NOT LL(1) ✗'}`;
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    console.error(e);
+  }
+});
+
+/* ═══════════════════ CLEAR ═══════════════════ */
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('code').value = '';
+  document.getElementById('status').textContent = 'Ready';
+  document.getElementById('output-body').innerHTML = '<div class="empty">Click <b>Transform</b> to process your grammar.</div>';
+  document.getElementById('steps-body').innerHTML = '<div class="empty">Click <b>Transform</b> to see steps.</div>';
+  document.getElementById('first-tb').innerHTML = '<tr><td colspan="2" class="empty">Click <b>Transform</b>.</td></tr>';
+  document.getElementById('follow-tb').innerHTML = '<tr><td colspan="2" class="empty">Click <b>Transform</b>.</td></tr>';
+  document.getElementById('pt-wrap').innerHTML = '<div class="empty">Click <b>Transform</b>.</div>';
+  document.getElementById('sum-stats').innerHTML = '';
+  document.getElementById('prod-tb').innerHTML = '<tr><td colspan="3" class="empty">Click <b>Transform</b>.</td></tr>';
+});
+
+/* ═══════════════════ DEMOS ═══════════════════ */
+document.getElementById('demo1').addEventListener('click', () => {
+  document.getElementById('code').value = `E → E + T | T
+T → T * F | F
+F → ( E ) | id`;
+  document.getElementById('run').click();
+});
+
+document.getElementById('demo2').addEventListener('click', () => {
+  document.getElementById('code').value = `S → i E t S S' | a
+S' → e S | ε
+E → b`;
+  document.getElementById('run').click();
+});
+
+document.getElementById('demo3').addEventListener('click', () => {
+  document.getElementById('code').value = `S → a A d | a B
+A → b | c
+B → c c d | d d a`;
+  document.getElementById('run').click();
+});
+
+document.getElementById('demo4').addEventListener('click', () => {
+  document.getElementById('code').value = `E → E + T | E - T | T
+T → T * F | T / F | F
+F → ( E ) | id | num
+S → if E then S else S | if E then S | a
+A → A a b | A a c | d`;
+  document.getElementById('run').click();
+});
+</script>
+</body>
+</html>

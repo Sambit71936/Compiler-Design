@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FIRST &amp; FOLLOW Set Calculator — Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#6ee7b7;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#a5b4fc;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px;}
+.page{max-width:1380px;margin:0 auto;}
+header{text-align:center;margin-bottom:22px;}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22);}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px;}
+.sub{color:var(--muted);font-size:13px;max-width:750px;margin:0 auto;line-height:1.5;}
+.grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:960px){.grid{grid-template-columns:1fr 1fr;}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+textarea{width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:13px;resize:vertical;outline:none;tab-size:4;line-height:1.6;}
+textarea:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7);}
+.controls{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s;}
+.btn:hover{filter:brightness(1.1);}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px;}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px;}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:100px;}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap;}
+.pbtn{padding:7px 12px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap;}
+.pbtn:first-child{border-radius:8px 0 0 8px;}
+.pbtn:last-child{border-radius:0 8px 8px 0;}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700;}
+.hidden{display:none !important;}
+.tw{max-height:520px;overflow:auto;border-radius:8px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead{position:sticky;top:0;background:#071427;z-index:1;}
+th,td{padding:8px 12px;font-size:12.5px;text-align:left;border-bottom:1px solid var(--border);}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:11px;}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1;}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px;}
+.cw{max-height:520px;overflow:auto;border-radius:8px;border:1px solid var(--border);background:#080f1e;padding:0;}
+.cl{display:flex;font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.7;border-bottom:1px solid rgba(31,41,55,.4);}
+.cn{min-width:32px;text-align:right;padding:2px 8px 2px 4px;color:#475569;background:rgba(0,0,0,.15);user-select:none;}
+.cc{padding:2px 10px;white-space:pre-wrap;}
+.set-badge{display:inline-block;padding:3px 8px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;margin:2px;white-space:nowrap;}
+.set-terminal{color:var(--green);background:rgba(110,231,183,.08);border:1px solid rgba(110,231,183,.15);}
+.set-epsilon{color:var(--yellow);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);}
+.set-dollar{color:var(--pink);background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.15);}
+.set-nonterminal{color:var(--accent);background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);}
+.prod-arrow{color:var(--accent);font-weight:700;}
+.prod-nt{color:var(--accent);font-weight:700;}
+.prod-t{color:var(--green);}
+.prod-eps{color:var(--yellow);font-style:italic;}
+.parse-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px;}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.stat-value{font-size:22px;font-weight:800;color:var(--accent);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+.step-card{background:rgba(56,189,248,.03);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;font-size:12px;font-family:"JetBrains Mono",monospace;line-height:1.7;}
+.step-title{font-weight:700;color:var(--accent);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+.step-detail{color:var(--text);margin-bottom:2px;}
+.step-add{color:var(--green);}
+.step-rule{color:var(--muted);font-style:italic;font-size:11px;margin-top:2px;}
+.step-iter{font-weight:700;color:var(--purple);font-size:12px;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:8px;}
+.help-box{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;font-size:12.5px;line-height:1.6;}
+.help-box h3{color:var(--accent);font-size:13px;margin-bottom:6px;}
+.help-box code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:12px;}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:14px;min-height:180px;max-height:520px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12.5px;}
+.console-line{line-height:1.7;}.console-line.info{color:var(--muted);}.console-line.ok{color:var(--green);}.console-line.err{color:var(--red);}.console-line.warn{color:var(--yellow);}.console-line.out{color:#f0f0f0;}
+.pt-cell{text-align:center !important;font-family:"JetBrains Mono",monospace;font-size:11.5px;}
+.pt-cell.has{color:var(--green);background:rgba(110,231,183,.04);}.pt-cell.empty{color:#334155;}
+.pt-nt{color:var(--accent);font-weight:700;}
+.pt-t{color:var(--green);font-weight:600;}
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">📐 FIRST &amp; FOLLOW</div>
+  <h1>FIRST &amp; FOLLOW Set Calculator</h1>
+  <p class="sub">Enter a context-free grammar below. Computes FIRST sets, FOLLOW sets, step-by-step trace, and LL(1) parse table — all in the browser.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">📝 Grammar Input</div>
+    <textarea id="grammar" spellcheck="false">E  -> T E'
+E' -> + T E' | ε
+T  -> F T'
+T' -> * F T' | ε
+F  -> ( E ) | id</textarea>
+    <div class="controls">
+      <button class="btn" id="run">⚡ Compute FIRST &amp; FOLLOW</button>
+      <button class="btn-sec" id="demo1">Demo 1</button>
+      <button class="btn-sec" id="demo2">Demo 2</button>
+      <button class="btn-sec" id="demo3">Demo 3</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <div class="help-box">
+      <h3>📖 Grammar Syntax</h3>
+      <div>• One production per line: <code>A -&gt; α | β</code></div>
+      <div>• Use <code>-&gt;</code> or <code>::=</code> or <code>→</code> as arrow</div>
+      <div>• Use <code>ε</code> or <code>epsilon</code> or <code>eps</code> or <code>''</code> for empty string</div>
+      <div>• <b>Non-terminals:</b> Uppercase letters or names with <code>'</code> (e.g., <code>E'</code>, <code>T'</code>, <code>S</code>, <code>EXPR</code>)</div>
+      <div>• <b>Terminals:</b> Lowercase, digits, or symbols like <code>+</code> <code>*</code> <code>(</code> <code>)</code> <code>id</code> <code>num</code></div>
+      <div>• <code>$</code> represents end-of-input in FOLLOW sets</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="first">FIRST Sets</button>
+      <button class="pbtn" data-tab="follow">FOLLOW Sets</button>
+      <button class="pbtn" data-tab="steps">Steps</button>
+      <button class="pbtn" data-tab="parsed">Grammar</button>
+      <button class="pbtn" data-tab="table">LL(1) Table</button>
+      <button class="pbtn" data-tab="summary">Summary</button>
+    </div>
+    <div id="panel-first"><div class="tw" id="first-w"><div class="empty">Click <b>Compute</b> to calculate FIRST sets.</div></div></div>
+    <div id="panel-follow" class="hidden"><div class="tw" id="follow-w"><div class="empty">Click <b>Compute</b> to calculate FOLLOW sets.</div></div></div>
+    <div id="panel-steps" class="hidden"><div style="max-height:520px;overflow:auto" id="steps-w"><div class="empty">Click <b>Compute</b> to see step-by-step computation.</div></div></div>
+    <div id="panel-parsed" class="hidden"><div class="tw" id="parsed-w"><div class="empty">Click <b>Compute</b> to see parsed grammar.</div></div></div>
+    <div id="panel-table" class="hidden"><div class="tw" id="table-w"><div class="empty">Click <b>Compute</b> to build the LL(1) parse table.</div></div></div>
+    <div id="panel-summary" class="hidden"><div class="parse-summary" id="sum-stats"></div><div class="console-wrap" id="console"><div class="console-line info">Click <b>Compute</b> to see analysis summary.</div></div></div>
+  </div>
+</div>
+<footer>
+  <div>Name: <strong>Chandresh G U</strong></div>
+  <div>Registration Number: <strong>RA2311003050021</strong></div>
+</footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   GRAMMAR PARSER
+   ═══════════════════════════════════════════════════════════ */
+function parseGrammar(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//'));
+  const productions = [];
+  const nonTerminals = new Set();
+  const allSymbols = new Set();
+  let startSymbol = null;
+  const EPS = 'ε';
+
+  for (const line of lines) {
+    // Split on -> or ::= or →
+    const m = line.match(/^(.+?)\s*(?:->|::=|→)\s*(.+)$/);
+    if (!m) continue;
+    const lhs = m[1].trim();
+    const rhsStr = m[2].trim();
+    if (!startSymbol) startSymbol = lhs;
+    nonTerminals.add(lhs);
+    // Split alternatives by |
+    const alternatives = rhsStr.split('|').map(a => a.trim());
+    for (const alt of alternatives) {
+      const symbols = tokenizeRHS(alt);
+      productions.push({ lhs, rhs: symbols });
+      for (const s of symbols) allSymbols.add(s);
+    }
+  }
+
+  // Determine terminals
+  const terminals = new Set();
+  for (const s of allSymbols) {
+    if (s === EPS) continue;
+    if (!nonTerminals.has(s)) terminals.add(s);
+  }
+
+  return { productions, nonTerminals, terminals, startSymbol, EPS };
+}
+
+function tokenizeRHS(rhs) {
+  const EPS = 'ε';
+  const tokens = [];
+  const parts = rhs.split(/\s+/);
+  for (let p of parts) {
+    if (!p) continue;
+    if (p === 'epsilon' || p === 'eps' || p === "''") p = EPS;
+    if (p === 'ε') { tokens.push(EPS); continue; }
+    // Handle things like E' as a single token
+    tokens.push(p);
+  }
+  return tokens.length ? tokens : [EPS];
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FIRST SET COMPUTATION
+   ═══════════════════════════════════════════════════════════ */
+function computeFirst(grammar) {
+  const { productions, nonTerminals, terminals, EPS } = grammar;
+  const first = {};
+  const steps = [];
+
+  // Initialize
+  for (const nt of nonTerminals) first[nt] = new Set();
+  for (const t of terminals) first[t] = new Set([t]);
+  first[EPS] = new Set([EPS]);
+
+  let changed = true;
+  let iteration = 0;
+  while (changed) {
+    changed = false;
+    iteration++;
+    steps.push({ type: 'iter', iteration, phase: 'FIRST' });
+
+    for (const prod of productions) {
+      const { lhs, rhs } = prod;
+      const before = new Set(first[lhs]);
+      const added = new Set();
+
+      if (rhs.length === 1 && rhs[0] === EPS) {
+        if (!first[lhs].has(EPS)) {
+          first[lhs].add(EPS);
+          added.add(EPS);
+          changed = true;
+        }
+        if (added.size) {
+          steps.push({
+            type: 'step', phase: 'FIRST', nt: lhs,
+            rule: `${lhs} → ${EPS}`,
+            detail: `Add ${EPS} to FIRST(${lhs})`,
+            added: [...added]
+          });
+        }
+        continue;
+      }
+
+      let allHaveEps = true;
+      for (let i = 0; i < rhs.length; i++) {
+        const sym = rhs[i];
+        const symFirst = first[sym] || new Set();
+        for (const s of symFirst) {
+          if (s !== EPS && !first[lhs].has(s)) {
+            first[lhs].add(s);
+            added.add(s);
+            changed = true;
+          }
+        }
+        if (!symFirst.has(EPS)) {
+          allHaveEps = false;
+          break;
+        }
+      }
+      if (allHaveEps && !first[lhs].has(EPS)) {
+        first[lhs].add(EPS);
+        added.add(EPS);
+        changed = true;
+      }
+      if (added.size) {
+        steps.push({
+          type: 'step', phase: 'FIRST', nt: lhs,
+          rule: `${lhs} → ${rhs.join(' ')}`,
+          detail: `Add { ${[...added].join(', ')} } to FIRST(${lhs})`,
+          added: [...added]
+        });
+      }
+    }
+  }
+
+  return { first, steps, iterations: iteration };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FOLLOW SET COMPUTATION
+   ═══════════════════════════════════════════════════════════ */
+function computeFollow(grammar, firstSets) {
+  const { productions, nonTerminals, startSymbol, EPS } = grammar;
+  const follow = {};
+  const steps = [];
+  const DOLLAR = '$';
+
+  // Initialize
+  for (const nt of nonTerminals) follow[nt] = new Set();
+  follow[startSymbol].add(DOLLAR);
+  steps.push({
+    type: 'step', phase: 'FOLLOW', nt: startSymbol,
+    rule: `${startSymbol} is start symbol`,
+    detail: `Add $ to FOLLOW(${startSymbol})`,
+    added: [DOLLAR]
+  });
+
+  // Helper: FIRST of a sequence
+  function firstOfSeq(seq) {
+    const result = new Set();
+    for (const sym of seq) {
+      const sf = firstSets[sym] || new Set([sym]);
+      for (const s of sf) {
+        if (s !== EPS) result.add(s);
+      }
+      if (!sf.has(EPS)) return result;
+    }
+    result.add(EPS);
+    return result;
+  }
+
+  let changed = true;
+  let iteration = 0;
+  while (changed) {
+    changed = false;
+    iteration++;
+    steps.push({ type: 'iter', iteration, phase: 'FOLLOW' });
+
+    for (const prod of productions) {
+      const { lhs, rhs } = prod;
+      for (let i = 0; i < rhs.length; i++) {
+        const B = rhs[i];
+        if (!nonTerminals.has(B)) continue;
+
+        const beta = rhs.slice(i + 1);
+        const added = new Set();
+
+        if (beta.length > 0) {
+          const firstBeta = firstOfSeq(beta);
+          for (const s of firstBeta) {
+            if (s !== EPS && !follow[B].has(s)) {
+              follow[B].add(s);
+              added.add(s);
+              changed = true;
+            }
+          }
+          if (added.size) {
+            steps.push({
+              type: 'step', phase: 'FOLLOW', nt: B,
+              rule: `${lhs} → ${rhs.join(' ')}  (β = ${beta.join(' ')})`,
+              detail: `Add FIRST(${beta.join(' ')}) \\ {ε} = { ${[...added].join(', ')} } to FOLLOW(${B})`,
+              added: [...added]
+            });
+          }
+
+          if (firstBeta.has(EPS)) {
+            const added2 = new Set();
+            for (const s of follow[lhs]) {
+              if (!follow[B].has(s)) {
+                follow[B].add(s);
+                added2.add(s);
+                changed = true;
+              }
+            }
+            if (added2.size) {
+              steps.push({
+                type: 'step', phase: 'FOLLOW', nt: B,
+                rule: `${lhs} → ${rhs.join(' ')}  (FIRST(β) contains ε)`,
+                detail: `Add FOLLOW(${lhs}) = { ${[...added2].join(', ')} } to FOLLOW(${B})`,
+                added: [...added2]
+              });
+            }
+          }
+        } else {
+          // B is at the end
+          const added3 = new Set();
+          for (const s of follow[lhs]) {
+            if (!follow[B].has(s)) {
+              follow[B].add(s);
+              added3.add(s);
+              changed = true;
+            }
+          }
+          if (added3.size) {
+            steps.push({
+              type: 'step', phase: 'FOLLOW', nt: B,
+              rule: `${lhs} → ${rhs.join(' ')}  (${B} is at end)`,
+              detail: `Add FOLLOW(${lhs}) = { ${[...added3].join(', ')} } to FOLLOW(${B})`,
+              added: [...added3]
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return { follow, steps, iterations: iteration };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LL(1) PARSE TABLE
+   ═══════════════════════════════════════════════════════════ */
+function buildParseTable(grammar, firstSets, followSets) {
+  const { productions, nonTerminals, terminals, EPS } = grammar;
+  const DOLLAR = '$';
+  const table = {};
+  const conflicts = [];
+
+  const termList = [...terminals].sort();
+  termList.push(DOLLAR);
+
+  for (const nt of nonTerminals) {
+    table[nt] = {};
+    for (const t of termList) table[nt][t] = [];
+  }
+
+  function firstOfSeq(seq) {
+    const result = new Set();
+    for (const sym of seq) {
+      const sf = firstSets[sym] || new Set([sym]);
+      for (const s of sf) { if (s !== EPS) result.add(s); }
+      if (!sf.has(EPS)) return result;
+    }
+    result.add(EPS);
+    return result;
+  }
+
+  for (const prod of productions) {
+    const { lhs, rhs } = prod;
+    const prodStr = `${lhs} → ${rhs.join(' ')}`;
+    const firstAlpha = firstOfSeq(rhs);
+
+    for (const a of firstAlpha) {
+      if (a !== EPS) {
+        table[lhs][a].push(prodStr);
+        if (table[lhs][a].length > 1) conflicts.push({ nt: lhs, terminal: a, prods: [...table[lhs][a]] });
+      }
+    }
+
+    if (firstAlpha.has(EPS)) {
+      const fw = followSets[lhs] || new Set();
+      for (const b of fw) {
+        table[lhs][b].push(prodStr);
+        if (table[lhs][b].length > 1) conflicts.push({ nt: lhs, terminal: b, prods: [...table[lhs][b]] });
+      }
+    }
+  }
+
+  return { table, termList, conflicts };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDERING
+   ═══════════════════════════════════════════════════════════ */
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function makeBadge(sym) {
+  if (sym === 'ε') return `<span class="set-badge set-epsilon">ε</span>`;
+  if (sym === '$') return `<span class="set-badge set-dollar">$</span>`;
+  return `<span class="set-badge set-terminal">${esc(sym)}</span>`;
+}
+
+function renderFirstFollow(sets, containerId, label) {
+  const el = document.getElementById(containerId);
+  let html = `<table><thead><tr><th style="width:140px">${label}</th><th>Set Elements</th></tr></thead><tbody>`;
+  const entries = Object.entries(sets).sort(([a],[b]) => a.localeCompare(b));
+  for (const [nt, set] of entries) {
+    const sorted = [...set].sort((a,b) => {
+      if (a === 'ε') return 1; if (b === 'ε') return -1;
+      if (a === '$') return 1; if (b === '$') return -1;
+      return a.localeCompare(b);
+    });
+    html += `<tr><td><span class="set-badge set-nonterminal">${esc(nt)}</span></td>`;
+    html += `<td>{ ${sorted.map(s => makeBadge(s)).join(' ')} }</td></tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function renderSteps(firstSteps, followSteps, container) {
+  container.innerHTML = '';
+  const allSteps = [
+    { type: 'header', text: 'FIRST Set Computation' },
+    ...firstSteps,
+    { type: 'header', text: 'FOLLOW Set Computation' },
+    ...followSteps
+  ];
+
+  for (const s of allSteps) {
+    if (s.type === 'header') {
+      container.insertAdjacentHTML('beforeend',
+        `<div style="font-weight:700;color:var(--accent);font-size:14px;padding:10px 0 6px;border-bottom:2px solid var(--accent);margin-bottom:8px">📐 ${esc(s.text)}</div>`);
+    } else if (s.type === 'iter') {
+      container.insertAdjacentHTML('beforeend',
+        `<div class="step-iter">🔄 Iteration ${s.iteration}</div>`);
+    } else if (s.type === 'step') {
+      const addedBadges = s.added.map(a => makeBadge(a)).join(' ');
+      container.insertAdjacentHTML('beforeend',
+        `<div class="step-card">
+          <div class="step-title">${esc(s.phase)} — <span class="set-badge set-nonterminal">${esc(s.nt)}</span></div>
+          <div class="step-detail"><span class="step-add">+ ${esc(s.detail)}</span></div>
+          <div style="margin-top:4px">Added: ${addedBadges}</div>
+          <div class="step-rule">Rule: ${esc(s.rule)}</div>
+        </div>`);
+    }
+  }
+}
+
+function renderParsedGrammar(grammar, container) {
+  const { productions, nonTerminals, terminals, startSymbol, EPS } = grammar;
+  let html = '<table><thead><tr><th>#</th><th>Production</th></tr></thead><tbody>';
+  productions.forEach((p, i) => {
+    const rhsHtml = p.rhs.map(s => {
+      if (s === EPS) return `<span class="prod-eps">ε</span>`;
+      if (nonTerminals.has(s)) return `<span class="prod-nt">${esc(s)}</span>`;
+      return `<span class="prod-t">${esc(s)}</span>`;
+    }).join(' ');
+    html += `<tr><td style="color:var(--muted)">${i+1}</td><td><span class="prod-nt">${esc(p.lhs)}</span> <span class="prod-arrow">→</span> ${rhsHtml}</td></tr>`;
+  });
+  html += '</tbody></table>';
+
+  html += `<div style="margin-top:12px"><div class="card-title">Grammar Info</div>`;
+  html += `<div style="font-size:12.5px;line-height:1.8">`;
+  html += `<div><b>Start Symbol:</b> <span class="set-badge set-nonterminal">${esc(startSymbol)}</span></div>`;
+  html += `<div><b>Non-terminals (${nonTerminals.size}):</b> ${[...nonTerminals].sort().map(s => `<span class="set-badge set-nonterminal">${esc(s)}</span>`).join(' ')}</div>`;
+  html += `<div><b>Terminals (${terminals.size}):</b> ${[...terminals].sort().map(s => makeBadge(s)).join(' ')}</div>`;
+  html += `<div><b>Productions:</b> ${productions.length}</div>`;
+  html += `</div></div>`;
+
+  container.innerHTML = html;
+}
+
+function renderParseTable(tableData, container) {
+  const { table, termList, conflicts } = tableData;
+  const nts = Object.keys(table).sort();
+
+  let html = '<table><thead><tr><th class="pt-nt" style="min-width:60px"></th>';
+  for (const t of termList) {
+    html += `<th class="pt-t" style="text-align:center">${esc(t)}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (const nt of nts) {
+    html += `<tr><td class="pt-nt">${esc(nt)}</td>`;
+    for (const t of termList) {
+      const entries = table[nt][t];
+      if (entries.length === 0) {
+        html += `<td class="pt-cell empty">—</td>`;
+      } else if (entries.length === 1) {
+        html += `<td class="pt-cell has">${esc(entries[0])}</td>`;
+      } else {
+        html += `<td class="pt-cell" style="color:var(--red);background:rgba(239,68,68,.06)">${entries.map(e => esc(e)).join('<br>')}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+
+  if (conflicts.length) {
+    html += `<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15)">`;
+    html += `<div style="color:var(--red);font-weight:700;font-size:12px;margin-bottom:6px">⚠️ LL(1) Conflicts Detected (${conflicts.length})</div>`;
+    const unique = new Map();
+    for (const c of conflicts) {
+      const key = `${c.nt}|${c.terminal}`;
+      if (!unique.has(key)) unique.set(key, c);
+    }
+    for (const [, c] of unique) {
+      html += `<div style="font-size:12px;color:var(--text);margin-bottom:4px;font-family:'JetBrains Mono',monospace">M[${esc(c.nt)}, ${esc(c.terminal)}]: ${c.prods.map(p=>esc(p)).join(' | ')}</div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(110,231,183,.06);border:1px solid rgba(110,231,183,.15);color:var(--green);font-weight:600;font-size:12px">✅ Grammar is LL(1) — No conflicts!</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderSummary(grammar, firstResult, followResult, tableData) {
+  const st = document.getElementById('sum-stats');
+  const con = document.getElementById('console');
+  const isLL1 = tableData.conflicts.length === 0;
+
+  st.innerHTML = `
+    <div class="stat-card"><div class="stat-value" style="color:${isLL1?'var(--green)':'var(--red)'}">${isLL1?'YES':'NO'}</div><div class="stat-label">LL(1)?</div></div>
+    <div class="stat-card"><div class="stat-value">${grammar.nonTerminals.size}</div><div class="stat-label">Non-Terminals</div></div>
+    <div class="stat-card"><div class="stat-value">${grammar.terminals.size}</div><div class="stat-label">Terminals</div></div>
+    <div class="stat-card"><div class="stat-value">${grammar.productions.length}</div><div class="stat-label">Productions</div></div>
+    <div class="stat-card"><div class="stat-value">${firstResult.iterations}</div><div class="stat-label">FIRST Iters</div></div>
+    <div class="stat-card"><div class="stat-value">${followResult.iterations}</div><div class="stat-label">FOLLOW Iters</div></div>
+    <div class="stat-card"><div class="stat-value">${tableData.conflicts.length}</div><div class="stat-label">Conflicts</div></div>
+  `;
+
+  let html = '';
+  html += `<div class="console-line info">╔═══════════════════════════════════════════════╗</div>`;
+  html += `<div class="console-line info">║   FIRST &amp; FOLLOW Analysis Summary            ║</div>`;
+  html += `<div class="console-line info">╚═══════════════════  ═══════════════════════════╝</div>`;
+  html += `<div class="console-line out">&nbsp;</div>`;
+  html += `<div class="console-line ok">Start Symbol: ${esc(grammar.startSymbol)}</div>`;
+  html += `<div class="console-line out">Non-terminals: ${[...grammar.nonTerminals].sort().join(', ')}</div>`;
+  html += `<div class="console-line out">Terminals: ${[...grammar.terminals].sort().join(', ')}</div>`;
+  html += `<div class="console-line out">Productions: ${grammar.productions.length}</div>`;
+  html += `<div class="console-line out">&nbsp;</div>`;
+
+  // FIRST sets
+  html += `<div class="console-line ok">━━━ FIRST Sets ━━━</div>`;
+  for (const nt of [...grammar.nonTerminals].sort()) {
+    const set = firstResult.first[nt];
+    html += `<div class="console-line out">  FIRST(${esc(nt)}) = { ${[...set].sort().join(', ')} }</div>`;
+  }
+
+  html += `<div class="console-line out">&nbsp;</div>`;
+  html += `<div class="console-line ok">━━━ FOLLOW Sets ━━━</div>`;
+  for (const nt of [...grammar.nonTerminals].sort()) {
+    const set = followResult.follow[nt];
+    html += `<div class="console-line out">  FOLLOW(${esc(nt)}) = { ${[...set].sort().join(', ')} }</div>`;
+  }
+
+  html += `<div class="console-line out">&nbsp;</div>`;
+  if (isLL1) {
+    html += `<div class="console-line ok">✅ Grammar is LL(1) — suitable for predictive parsing.</div>`;
+  } else {
+    html += `<div class="console-line err">⚠️ Grammar is NOT LL(1) — ${tableData.conflicts.length} conflict(s) found.</div>`;
+    const unique = new Map();
+    for (const c of tableData.conflicts) {
+      const key = `${c.nt}|${c.terminal}`;
+      if (!unique.has(key)) unique.set(key, c);
+    }
+    for (const [, c] of unique) {
+      html += `<div class="console-line warn">  Conflict: M[${esc(c.nt)}, ${esc(c.terminal)}] = ${c.prods.join(' | ')}</div>`;
+    }
+  }
+
+  // Check for nullable non-terminals
+  html += `<div class="console-line out">&nbsp;</div>`;
+  html += `<div class="console-line ok">━━━ Nullable Non-terminals ━━━</div>`;
+  let anyNull = false;
+  for (const nt of [...grammar.nonTerminals].sort()) {
+    if (firstResult.first[nt].has('ε')) {
+      html += `<div class="console-line warn">  ${esc(nt)} is nullable (ε ∈ FIRST(${esc(nt)}))</div>`;
+      anyNull = true;
+    }
+  }
+  if (!anyNull) html += `<div class="console-line out">  None</div>`;
+
+  con.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════════════════════════ */
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    ['first','follow','steps','parsed','table','summary'].forEach(p => {
+      document.getElementById('panel-'+p).classList.toggle('hidden', p !== target);
+    });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   EVENTS
+   ═══════════════════════════════════════════════════════════ */
+document.getElementById('run').addEventListener('click', () => {
+  const text = document.getElementById('grammar').value;
+  const status = document.getElementById('status');
+  status.textContent = 'Computing…';
+
+  try {
+    const grammar = parseGrammar(text);
+    if (!grammar.startSymbol || grammar.productions.length === 0) {
+      status.textContent = 'Error: No valid productions found.';
+      return;
+    }
+
+    // Phase 1: FIRST
+    const firstResult = computeFirst(grammar);
+
+    // Phase 2: FOLLOW
+    const followResult = computeFollow(grammar, firstResult.first);
+
+    // Phase 3: LL(1) Table
+    const tableData = buildParseTable(grammar, firstResult.first, followResult.follow);
+
+    // Render
+    renderFirstFollow(firstResult.first, 'first-w', 'FIRST');
+    renderFirstFollow(followResult.follow, 'follow-w', 'FOLLOW');
+    renderSteps(firstResult.steps, followResult.steps, document.getElementById('steps-w'));
+    renderParsedGrammar(grammar, document.getElementById('parsed-w'));
+    renderParseTable(tableData, document.getElementById('table-w'));
+    renderSummary(grammar, firstResult, followResult, tableData);
+
+    const isLL1 = tableData.conflicts.length === 0;
+    status.textContent = `✅ Done — ${grammar.nonTerminals.size} non-terminals, ${grammar.terminals.size} terminals, ${grammar.productions.length} productions${isLL1 ? ' — LL(1) ✓' : ' — NOT LL(1) ✗'}`;
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    console.error(e);
+  }
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('grammar').value = '';
+  document.getElementById('status').textContent = 'Ready';
+  document.getElementById('first-w').innerHTML = '<div class="empty">Click <b>Compute</b> to calculate FIRST sets.</div>';
+  document.getElementById('follow-w').innerHTML = '<div class="empty">Click <b>Compute</b> to calculate FOLLOW sets.</div>';
+  document.getElementById('steps-w').innerHTML = '<div class="empty">Click <b>Compute</b> to see step-by-step computation.</div>';
+  document.getElementById('parsed-w').innerHTML = '<div class="empty">Click <b>Compute</b> to see parsed grammar.</div>';
+  document.getElementById('table-w').innerHTML = '<div class="empty">Click <b>Compute</b> to build the LL(1) parse table.</div>';
+  document.getElementById('sum-stats').innerHTML = '';
+  document.getElementById('console').innerHTML = '<div class="console-line info">Click <b>Compute</b> to see analysis summary.</div>';
+});
+
+/* ═══════════════════════════════════════════════════════════
+   DEMO GRAMMARS
+   ═══════════════════════════════════════════════════════════ */
+document.getElementById('demo1').addEventListener('click', () => {
+  document.getElementById('grammar').value = `E  -> T E'
+E' -> + T E' | ε
+T  -> F T'
+T' -> * F T' | ε
+F  -> ( E ) | id`;
+  document.getElementById('run').click();
+});
+
+document.getElementById('demo2').addEventListener('click', () => {
+  document.getElementById('grammar').value = `S -> A B C
+A -> a A | ε
+B -> b B | ε
+C -> c C | d`;
+  document.getElementById('run').click();
+});
+
+document.getElementById('demo3').addEventListener('click', () => {
+  document.getElementById('grammar').value = `PROGRAM -> STMT_LIST
+STMT_LIST -> STMT STMT_LIST | ε
+STMT -> ASSIGN | IF_STMT | WHILE_STMT
+ASSIGN -> id = EXPR ;
+IF_STMT -> if ( EXPR ) STMT else STMT
+WHILE_STMT -> while ( EXPR ) STMT
+EXPR -> TERM EXPR'
+EXPR' -> + TERM EXPR' | - TERM EXPR' | ε
+TERM -> FACTOR TERM'
+TERM' -> * FACTOR TERM' | / FACTOR TERM' | ε
+FACTOR -> ( EXPR ) | id | num`;
+  document.getElementById('run').click();
+});
+</script>
+</body>
+</html>

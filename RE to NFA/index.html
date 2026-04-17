@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Regular Expression to NFA — Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#6ee7b7;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#a5b4fc;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px;}
+.page{max-width:1400px;margin:0 auto;}
+header{text-align:center;margin-bottom:20px;}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22);}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px;}
+.sub{color:var(--muted);font-size:13px;max-width:740px;margin:0 auto;}
+.grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:960px){.grid{grid-template-columns:1fr 1fr;}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;overflow:hidden;}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;}
+.input-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.input-row input{flex:1;min-width:180px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:14px;outline:none;}
+.input-row input:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7);}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s;}
+.btn:hover{filter:brightness(1.1);}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px;}
+.btn-sm{padding:7px 10px;font-size:11.5px;}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px;}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:100px;}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap;}
+.pbtn{padding:7px 10px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap;}
+.pbtn:first-child{border-radius:8px 0 0 8px;}.pbtn:last-child{border-radius:0 8px 8px 0;}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700;}
+.hidden{display:none !important;}
+.tw{max-height:500px;overflow:auto;border-radius:8px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead{position:sticky;top:0;background:#071427;z-index:1;}
+th,td{padding:7px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--border);}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:11px;}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1;}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px;}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:16px;min-height:200px;max-height:520px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:13px;}
+.console-line{line-height:1.8;}
+.console-line.info{color:var(--muted);}.console-line.output{color:#f0f0f0;}.console-line.ok{color:var(--green);}.console-line.fail{color:var(--red);}.console-line.head{color:var(--accent);font-weight:700;}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-weight:700;font-size:11px;}
+.badge-accent{color:var(--accent);background:rgba(56,189,248,.08);}
+.badge-green{color:var(--green);background:rgba(110,231,183,.08);}
+.badge-red{color:var(--red);background:rgba(239,68,68,.08);}
+.badge-yellow{color:var(--yellow);background:rgba(251,191,36,.08);}
+.badge-purple{color:var(--purple);background:rgba(192,132,252,.08);}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px;}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.stat-value{font-size:22px;font-weight:800;color:var(--accent);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+/* NFA Diagram */
+svg.nfa-diagram{width:100%;background:#080f1e;border-radius:8px;border:1px solid var(--border);}
+.nfa-state{fill:#1e293b;stroke:var(--accent);stroke-width:2;}
+.nfa-accept{stroke:var(--green);stroke-width:3;}
+.nfa-state-label{fill:var(--text);font-family:"JetBrains Mono",monospace;font-size:12px;text-anchor:middle;dominant-baseline:central;}
+.nfa-edge{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#arrowhead);}
+.nfa-edge-label{fill:var(--yellow);font-family:"JetBrains Mono",monospace;font-size:11px;text-anchor:middle;dominant-baseline:auto;}
+.nfa-start-arrow{stroke:var(--accent);stroke-width:2;fill:none;marker-end:url(#arrowhead-start);}
+/* Examples */
+.examples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.ex-btn{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);color:var(--accent);border-radius:8px;padding:5px 10px;cursor:pointer;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;}
+.ex-btn:hover{background:rgba(56,189,248,.14);}
+/* Test input */
+.test-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.test-row input{flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono",monospace;font-size:13px;outline:none;}
+.test-row input:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7);}
+/* Parse tree */
+.tree-wrap{max-height:400px;overflow:auto;border-radius:8px;border:1px solid var(--border);background:#080f1e;padding:14px;font-family:"JetBrains Mono",monospace;font-size:11.5px;}
+.tree-node{line-height:1.7;white-space:nowrap;color:var(--text);}
+.tree-type{color:var(--accent);font-weight:700;}.tree-value{color:var(--yellow);}
+.tree-toggle{cursor:pointer;user-select:none;}.tree-toggle:hover .tree-type{text-decoration:underline;}
+footer{margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">🔄 Regex → NFA</div>
+  <h1>Regular Expression to NFA Converter</h1>
+  <p class="sub">Enter a regular expression to see its parse tree, NFA construction via Thompson's algorithm, transition table, and test strings against it.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">Regular Expression Input</div>
+    <div class="input-row">
+      <input type="text" id="regex-input" placeholder="e.g. (a|b)*abb" value="(a|b)*abb" spellcheck="false">
+    </div>
+    <div class="card-title" style="margin-top:4px">Quick Examples</div>
+    <div class="examples">
+      <button class="ex-btn" data-re="(a|b)*abb">(a|b)*abb</button>
+      <button class="ex-btn" data-re="a*b*">a*b*</button>
+      <button class="ex-btn" data-re="(a|b)*">(a|b)*</button>
+      <button class="ex-btn" data-re="ab|cd">ab|cd</button>
+      <button class="ex-btn" data-re="a(b|c)*d">a(b|c)*d</button>
+      <button class="ex-btn" data-re="(ab)*">(ab)*</button>
+      <button class="ex-btn" data-re="a|b|c">a|b|c</button>
+      <button class="ex-btn" data-re="(a|ε)b">(a|ε)b</button>
+    </div>
+    <div class="controls">
+      <button class="btn" id="convert">🔄 Convert to NFA</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <div class="card-title" style="margin-top:14px">Test String Against NFA</div>
+    <div class="test-row">
+      <input type="text" id="test-input" placeholder="e.g. aabb" spellcheck="false">
+      <button class="btn btn-sm" id="test-btn">▶ Test</button>
+      <button class="btn-sec btn-sm" id="test-all-btn">Test Batch</button>
+    </div>
+    <div id="test-result" style="margin-top:8px"></div>
+    <div class="card-title" style="margin-top:14px">Batch Test Results</div>
+    <div class="console-wrap" id="test-console" style="min-height:120px;max-height:250px">
+      <div class="console-line info">Enter a regex above and click <b>Test Batch</b> to auto-test common strings.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="diagram">NFA Diagram</button>
+      <button class="pbtn" data-tab="table">Transition Table</button>
+      <button class="pbtn" data-tab="tree">Parse Tree</button>
+      <button class="pbtn" data-tab="steps">Construction Steps</button>
+      <button class="pbtn" data-tab="summary">Summary</button>
+    </div>
+    <div id="panel-diagram"><div id="diagram-container"><div class="empty">Click <b>Convert to NFA</b>.</div></div></div>
+    <div id="panel-table" class="hidden"><div class="tw"><table><thead><tr><th>State</th><th>Symbol</th><th>Next States</th><th>Type</th></tr></thead><tbody id="trans-tb"><tr><td colspan="4" class="empty">Click <b>Convert to NFA</b>.</td></tr></tbody></table></div></div>
+    <div id="panel-tree" class="hidden"><div class="tree-wrap" id="tree-container"><div class="empty">Click <b>Convert to NFA</b>.</div></div></div>
+    <div id="panel-steps" class="hidden"><div class="console-wrap" id="steps-console" style="max-height:520px"><div class="console-line info">Click <b>Convert to NFA</b>.</div></div></div>
+    <div id="panel-summary" class="hidden"><div class="summary-grid" id="sum-stats"></div><div class="card-title">NFA Formal Definition</div><div class="console-wrap" id="formal-def" style="max-height:300px"><div class="console-line info">Click <b>Convert to NFA</b>.</div></div></div>
+  </div>
+</div>
+<footer>
+  <div>Name: <strong>Chandresh G U</strong></div>
+  <div>Registration Number: <strong>RA2311003050021</strong></div>
+</footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   REGEX PARSER — builds a syntax tree from the regex string
+   Supports: concatenation, | (union), * (Kleene star),
+             + (one or more), ? (optional), parentheses,
+             ε (epsilon), literal chars
+   ═══════════════════════════════════════════════════════════ */
+class RParser {
+  constructor(re) {
+    this.src = re; this.p = 0;
+  }
+  peek() { return this.p < this.src.length ? this.src[this.p] : null; }
+  advance() { return this.src[this.p++]; }
+  parse() {
+    const n = this.expr();
+    if (this.p < this.src.length) throw new Error(`Unexpected '${this.peek()}' at position ${this.p}`);
+    return n;
+  }
+  // expr → term ('|' term)*
+  expr() {
+    let n = this.term();
+    while (this.peek() === '|') {
+      this.advance();
+      const r = this.term();
+      n = { type: 'UNION', left: n, right: r };
+    }
+    return n;
+  }
+  // term → factor factor*
+  term() {
+    let n = this.factor();
+    while (this.peek() && this.peek() !== ')' && this.peek() !== '|') {
+      const r = this.factor();
+      n = { type: 'CONCAT', left: n, right: r };
+    }
+    return n;
+  }
+  // factor → base ('*' | '+' | '?')*
+  factor() {
+    let n = this.base();
+    while (this.peek() === '*' || this.peek() === '+' || this.peek() === '?') {
+      const op = this.advance();
+      if (op === '*') n = { type: 'STAR', child: n };
+      else if (op === '+') n = { type: 'PLUS', child: n };
+      else n = { type: 'OPTIONAL', child: n };
+    }
+    return n;
+  }
+  // base → '(' expr ')' | CHAR | 'ε'
+  base() {
+    const ch = this.peek();
+    if (ch === '(') {
+      this.advance();
+      const n = this.expr();
+      if (this.peek() !== ')') throw new Error(`Expected ')' at position ${this.p}`);
+      this.advance();
+      return n;
+    }
+    if (ch === null || ch === ')' || ch === '|' || ch === '*' || ch === '+' || ch === '?')
+      throw new Error(`Unexpected '${ch || 'EOF'}' at position ${this.p}`);
+    this.advance();
+    if (ch === 'ε' || ch === 'ϵ') return { type: 'EPSILON' };
+    return { type: 'CHAR', value: ch };
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THOMPSON'S NFA CONSTRUCTION
+   ═══════════════════════════════════════════════════════════ */
+let stateCounter = 0;
+function newState() { return stateCounter++; }
+
+function buildNFA(node) {
+  if (!node) return null;
+  switch (node.type) {
+    case 'CHAR': {
+      const s = newState(), e = newState();
+      return { start: s, accept: e, transitions: [{ from: s, to: e, symbol: node.value }] };
+    }
+    case 'EPSILON': {
+      const s = newState(), e = newState();
+      return { start: s, accept: e, transitions: [{ from: s, to: e, symbol: 'ε' }] };
+    }
+    case 'CONCAT': {
+      const n1 = buildNFA(node.left), n2 = buildNFA(node.right);
+      // Merge n1.accept with n2.start
+      const merged = [...n1.transitions, ...n2.transitions, { from: n1.accept, to: n2.start, symbol: 'ε' }];
+      return { start: n1.start, accept: n2.accept, transitions: merged };
+    }
+    case 'UNION': {
+      const s = newState(), e = newState();
+      const n1 = buildNFA(node.left), n2 = buildNFA(node.right);
+      const trans = [
+        ...n1.transitions, ...n2.transitions,
+        { from: s, to: n1.start, symbol: 'ε' },
+        { from: s, to: n2.start, symbol: 'ε' },
+        { from: n1.accept, to: e, symbol: 'ε' },
+        { from: n2.accept, to: e, symbol: 'ε' }
+      ];
+      return { start: s, accept: e, transitions: trans };
+    }
+    case 'STAR': {
+      const s = newState(), e = newState();
+      const n1 = buildNFA(node.child);
+      const trans = [
+        ...n1.transitions,
+        { from: s, to: n1.start, symbol: 'ε' },
+        { from: s, to: e, symbol: 'ε' },
+        { from: n1.accept, to: n1.start, symbol: 'ε' },
+        { from: n1.accept, to: e, symbol: 'ε' }
+      ];
+      return { start: s, accept: e, transitions: trans };
+    }
+    case 'PLUS': {
+      // a+ = a · a*
+      const n1 = buildNFA(node.child);
+      const s = newState(), e = newState();
+      const trans = [
+        ...n1.transitions,
+        { from: s, to: n1.start, symbol: 'ε' },
+        { from: n1.accept, to: n1.start, symbol: 'ε' },
+        { from: n1.accept, to: e, symbol: 'ε' }
+      ];
+      return { start: s, accept: e, transitions: trans };
+    }
+    case 'OPTIONAL': {
+      // a? = (a | ε)
+      const s = newState(), e = newState();
+      const n1 = buildNFA(node.child);
+      const trans = [
+        ...n1.transitions,
+        { from: s, to: n1.start, symbol: 'ε' },
+        { from: s, to: e, symbol: 'ε' },
+        { from: n1.accept, to: e, symbol: 'ε' }
+      ];
+      return { start: s, accept: e, transitions: trans };
+    }
+    default: throw new Error(`Unknown node type: ${node.type}`);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NFA SIMULATION — epsilon closure + move
+   ═══════════════════════════════════════════════════════════ */
+function epsilonClosure(nfa, states) {
+  const stack = [...states], closure = new Set(states);
+  while (stack.length) {
+    const s = stack.pop();
+    for (const t of nfa.transitions) {
+      if (t.from === s && t.symbol === 'ε' && !closure.has(t.to)) {
+        closure.add(t.to); stack.push(t.to);
+      }
+    }
+  }
+  return closure;
+}
+
+function move(nfa, states, symbol) {
+  const result = new Set();
+  for (const s of states) {
+    for (const t of nfa.transitions) {
+      if (t.from === s && t.symbol === symbol) result.add(t.to);
+    }
+  }
+  return result;
+}
+
+function simulateNFA(nfa, input) {
+  let current = epsilonClosure(nfa, [nfa.start]);
+  const path = [{ states: new Set(current), symbol: 'start' }];
+  for (const ch of input) {
+    const moved = move(nfa, current, ch);
+    current = epsilonClosure(nfa, [...moved]);
+    path.push({ states: new Set(current), symbol: ch });
+    if (current.size === 0) break;
+  }
+  return { accepted: current.has(nfa.accept), path };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONSTRUCTION STEPS TRACKER
+   ═══════════════════════════════════════════════════════════ */
+function buildSteps(node, depth = 0) {
+  const steps = [];
+  const indent = '  '.repeat(depth);
+  if (!node) return steps;
+  switch (node.type) {
+    case 'CHAR':
+      steps.push(`${indent}Create NFA for character '${node.value}': q→q on '${node.value}'`);
+      break;
+    case 'EPSILON':
+      steps.push(`${indent}Create NFA for ε: q→q on ε`);
+      break;
+    case 'CONCAT':
+      steps.push(`${indent}Concatenation:`);
+      steps.push(...buildSteps(node.left, depth + 1));
+      steps.push(...buildSteps(node.right, depth + 1));
+      steps.push(`${indent}  → Connect accept of left to start of right via ε`);
+      break;
+    case 'UNION':
+      steps.push(`${indent}Union (|):`);
+      steps.push(...buildSteps(node.left, depth + 1));
+      steps.push(...buildSteps(node.right, depth + 1));
+      steps.push(`${indent}  → New start with ε to both branches`);
+      steps.push(`${indent}  → Both accepts connect via ε to new accept`);
+      break;
+    case 'STAR':
+      steps.push(`${indent}Kleene Star (*):`);
+      steps.push(...buildSteps(node.child, depth + 1));
+      steps.push(`${indent}  → New start/accept, ε from accept→start (loop)`);
+      steps.push(`${indent}  → ε from new start to new accept (skip)`);
+      break;
+    case 'PLUS':
+      steps.push(`${indent}One-or-more (+):`);
+      steps.push(...buildSteps(node.child, depth + 1));
+      steps.push(`${indent}  → Loop from accept back to start via ε`);
+      break;
+    case 'OPTIONAL':
+      steps.push(`${indent}Optional (?):`);
+      steps.push(...buildSteps(node.child, depth + 1));
+      steps.push(`${indent}  → ε bypass from new start to new accept`);
+      break;
+  }
+  return steps;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDERING — SVG NFA Diagram
+   ═══════════════════════════════════════════════════════════ */
+function renderDiagram(nfa, container) {
+  const allStates = new Set();
+  for (const t of nfa.transitions) { allStates.add(t.from); allStates.add(t.to); }
+  allStates.add(nfa.start); allStates.add(nfa.accept);
+  const states = [...allStates].sort((a, b) => a - b);
+  const n = states.length;
+  const R = 22, pad = 60;
+  // Layout: place states in a grid-like flow
+  const cols = Math.min(n, Math.max(4, Math.ceil(Math.sqrt(n) * 1.6)));
+  const rows = Math.ceil(n / cols);
+  const gapX = 110, gapY = 90;
+  const W = cols * gapX + pad * 2;
+  const H = rows * gapY + pad * 2;
+  const pos = {};
+  states.forEach((s, i) => {
+    const col = i % cols, row = Math.floor(i / cols);
+    pos[s] = { x: pad + col * gapX + gapX / 2, y: pad + row * gapY + gapY / 2 };
+  });
+  let svg = `<svg class="nfa-diagram" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--muted)"/></marker>
+    <marker id="arrowhead-start" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)"/></marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--green)"/></marker>
+  </defs>`;
+  // Start arrow
+  const sp = pos[nfa.start];
+  svg += `<line x1="${sp.x - 40}" y1="${sp.y}" x2="${sp.x - R - 2}" y2="${sp.y}" class="nfa-start-arrow"/>`;
+  svg += `<text x="${sp.x - 42}" y="${sp.y - 8}" fill="var(--accent)" font-size="10" font-weight="700" font-family="monospace" text-anchor="end">start</text>`;
+  // Group transitions by (from, to) for label stacking
+  const edgeMap = {};
+  for (const t of nfa.transitions) {
+    const key = `${t.from}-${t.to}`;
+    if (!edgeMap[key]) edgeMap[key] = [];
+    edgeMap[key].push(t.symbol);
+  }
+  // Draw edges
+  for (const [key, symbols] of Object.entries(edgeMap)) {
+    const [from, to] = key.split('-').map(Number);
+    const p1 = pos[from], p2 = pos[to];
+    const label = symbols.join(', ');
+    if (from === to) {
+      // Self-loop
+      svg += `<path d="M${p1.x},${p1.y - R} C${p1.x - 25},${p1.y - R - 35} ${p1.x + 25},${p1.y - R - 35} ${p1.x},${p1.y - R}" class="nfa-edge" style="${symbols.includes('ε') ? 'stroke:var(--purple);stroke-dasharray:4,3' : ''}"/>`;
+      svg += `<text x="${p1.x}" y="${p1.y - R - 28}" class="nfa-edge-label">${esc(label)}</text>`;
+    } else {
+      const dx = p2.x - p1.x, dy = p2.y - p1.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const ux = dx / dist, uy = dy / dist;
+      // Check if reverse edge exists for curve offset
+      const reverseKey = `${to}-${from}`;
+      const hasBidi = edgeMap[reverseKey];
+      if (hasBidi) {
+        const nx = -uy, ny = ux, off = 12;
+        const cx = (p1.x + p2.x) / 2 + nx * off * 2;
+        const cy = (p1.y + p2.y) / 2 + ny * off * 2;
+        const sx = p1.x + ux * R + nx * off * 0.4;
+        const sy = p1.y + uy * R + ny * off * 0.4;
+        const ex = p2.x - ux * (R + 4) + nx * off * 0.4;
+        const ey = p2.y - uy * (R + 4) + ny * off * 0.4;
+        svg += `<path d="M${sx},${sy} Q${cx},${cy} ${ex},${ey}" class="nfa-edge" style="${symbols.includes('ε') ? 'stroke:var(--purple);stroke-dasharray:4,3' : ''}"/>`;
+        const lx = (sx + 2 * cx + ex) / 4, ly = (sy + 2 * cy + ey) / 4;
+        svg += `<text x="${lx}" y="${ly - 4}" class="nfa-edge-label">${esc(label)}</text>`;
+      } else {
+        const sx = p1.x + ux * R, sy = p1.y + uy * R;
+        const ex = p2.x - ux * (R + 4), ey = p2.y - uy * (R + 4);
+        svg += `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" class="nfa-edge" style="${symbols.includes('ε') ? 'stroke:var(--purple);stroke-dasharray:4,3' : ''}"/>`;
+        const lx = (sx + ex) / 2 - uy * 12, ly = (sy + ey) / 2 + ux * 12 - 4;
+        svg += `<text x="${lx}" y="${ly}" class="nfa-edge-label">${esc(label)}</text>`;
+      }
+    }
+  }
+  // Draw states
+  for (const s of states) {
+    const { x, y } = pos[s];
+    const isAccept = s === nfa.accept;
+    svg += `<circle cx="${x}" cy="${y}" r="${R}" class="nfa-state ${isAccept ? 'nfa-accept' : ''}"/>`;
+    if (isAccept) svg += `<circle cx="${x}" cy="${y}" r="${R - 4}" fill="none" stroke="var(--green)" stroke-width="1.5"/>`;
+    svg += `<text x="${x}" y="${y}" class="nfa-state-label">q${s}</text>`;
+  }
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function renderTransitionTable(nfa) {
+  const tb = document.getElementById('trans-tb');
+  tb.innerHTML = '';
+  const allStates = new Set();
+  for (const t of nfa.transitions) { allStates.add(t.from); allStates.add(t.to); }
+  allStates.add(nfa.start); allStates.add(nfa.accept);
+  const states = [...allStates].sort((a, b) => a - b);
+  const symbols = [...new Set(nfa.transitions.map(t => t.symbol))].sort();
+  for (const s of states) {
+    for (const sym of symbols) {
+      const targets = nfa.transitions.filter(t => t.from === s && t.symbol === sym).map(t => `q${t.to}`);
+      if (!targets.length) continue;
+      const tr = document.createElement('tr');
+      const isStart = s === nfa.start, isAccept = s === nfa.accept;
+      let typeHtml = '';
+      if (isStart) typeHtml += '<span class="badge badge-accent" style="margin-right:4px">Start</span>';
+      if (isAccept) typeHtml += '<span class="badge badge-green">Accept</span>';
+      if (!typeHtml) typeHtml = '<span style="color:var(--muted)">—</span>';
+      tr.innerHTML = `<td class="val" style="font-weight:700">q${s}</td>
+        <td><span class="badge ${sym === 'ε' ? 'badge-purple' : 'badge-yellow'}">${esc(sym)}</span></td>
+        <td class="val">{${targets.join(', ')}}</td>
+        <td>${typeHtml}</td>`;
+      tb.appendChild(tr);
+    }
+  }
+  if (!tb.children.length) tb.innerHTML = '<tr><td colspan="4" class="empty">No transitions.</td></tr>';
+}
+
+function renderParseTree(node, container) {
+  container.innerHTML = '';
+  function build(n, indent, isLast, prefix, parent) {
+    const div = document.createElement('div');
+    div.className = 'tree-node';
+    const conn = indent > 0 ? (isLast ? '└── ' : '├── ') : '';
+    const np = prefix + (indent > 0 ? (isLast ? '    ' : '│   ') : '');
+    const val = n.value ? ` : <span class="tree-value">${esc(n.value)}</span>` : '';
+    const children = [];
+    if (n.left) children.push(n.left);
+    if (n.right) children.push(n.right);
+    if (n.child) children.push(n.child);
+    const hasC = children.length > 0;
+    const arrow = hasC ? '<span class="tree-arrow" style="color:#475569;margin-right:2px">▼</span>' : '';
+    div.innerHTML = `<span style="color:#475569">${esc(prefix)}${esc(conn)}</span>${arrow}<span class="tree-type">${esc(n.type)}</span>${val}`;
+    parent.appendChild(div);
+    if (hasC) {
+      div.classList.add('tree-toggle');
+      const cc = document.createElement('div');
+      parent.appendChild(cc);
+      children.forEach((ch, i) => build(ch, indent + 1, i === children.length - 1, np, cc));
+      div.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        const ar = this.querySelector('.tree-arrow');
+        if (cc.style.display === 'none') { cc.style.display = ''; if (ar) ar.textContent = '▼'; }
+        else { cc.style.display = 'none'; if (ar) ar.textContent = '▶'; }
+      });
+    }
+  }
+  build(node, 0, true, '', container);
+}
+
+function renderSteps(steps, container) {
+  container.innerHTML = '';
+  container.insertAdjacentHTML('beforeend', '<div class="console-line head">Thompson\'s Construction Steps</div>');
+  container.insertAdjacentHTML('beforeend', '<div class="console-line head">════════════════════════════════════</div>');
+  steps.forEach((s, i) => {
+    container.insertAdjacentHTML('beforeend', `<div class="console-line output">${esc(s)}</div>`);
+  });
+}
+
+function renderSummary(nfa, regex, parseTree) {
+  const allStates = new Set();
+  for (const t of nfa.transitions) { allStates.add(t.from); allStates.add(t.to); }
+  allStates.add(nfa.start); allStates.add(nfa.accept);
+  const states = [...allStates].sort((a, b) => a - b);
+  const alphabet = [...new Set(nfa.transitions.map(t => t.symbol).filter(s => s !== 'ε'))].sort();
+  const epsCount = nfa.transitions.filter(t => t.symbol === 'ε').length;
+  const st = document.getElementById('sum-stats');
+  st.innerHTML = `
+    <div class="stat-card"><div class="stat-value">${states.length}</div><div class="stat-label">States</div></div>
+    <div class="stat-card"><div class="stat-value">${nfa.transitions.length}</div><div class="stat-label">Transitions</div></div>
+    <div class="stat-card"><div class="stat-value">${alphabet.length}</div><div class="stat-label">Symbols</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--purple)">${epsCount}</div><div class="stat-label">ε-moves</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--accent)">q${nfa.start}</div><div class="stat-label">Start</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--green)">q${nfa.accept}</div><div class="stat-label">Accept</div></div>`;
+  const fd = document.getElementById('formal-def');
+  fd.innerHTML = '';
+  fd.insertAdjacentHTML('beforeend', '<div class="console-line head">NFA = (Q, Σ, δ, q₀, F)</div>');
+  fd.insertAdjacentHTML('beforeend', `<div class="console-line output">  Q  = {${states.map(s => 'q' + s).join(', ')}}</div>`);
+  fd.insertAdjacentHTML('beforeend', `<div class="console-line output">  Σ  = {${alphabet.join(', ')}}</div>`);
+  fd.insertAdjacentHTML('beforeend', `<div class="console-line output">  q₀ = q${nfa.start}</div>`);
+  fd.insertAdjacentHTML('beforeend', `<div class="console-line output">  F  = {q${nfa.accept}}</div>`);
+  fd.insertAdjacentHTML('beforeend', '<div class="console-line head" style="margin-top:8px">Transition Function δ:</div>');
+  for (const t of nfa.transitions) {
+    fd.insertAdjacentHTML('beforeend', `<div class="console-line output">  δ(q${t.from}, ${t.symbol}) → q${t.to}</div>`);
+  }
+  fd.insertAdjacentHTML('beforeend', `<div class="console-line info" style="margin-top:8px">Regular Expression: ${esc(regex)}</div>`);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL STATE
+   ═══════════════════════════════════════════════════════════ */
+let currentNFA = null;
+
+/* TABS */
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    ['diagram', 'table', 'tree', 'steps', 'summary'].forEach(p => {
+      document.getElementById('panel-' + p).classList.toggle('hidden', p !== target);
+    });
+  });
+});
+
+/* CONVERT */
+document.getElementById('convert').addEventListener('click', () => {
+  const regex = document.getElementById('regex-input').value.trim();
+  const status = document.getElementById('status');
+  if (!regex) { status.textContent = 'Please enter a regex.'; return; }
+  try {
+    stateCounter = 0;
+    const parser = new RParser(regex);
+    const tree = parser.parse();
+    const nfa = buildNFA(tree);
+    currentNFA = nfa;
+    const steps = buildSteps(tree);
+    renderDiagram(nfa, document.getElementById('diagram-container'));
+    renderTransitionTable(nfa);
+    renderParseTree(tree, document.getElementById('tree-container'));
+    renderSteps(steps, document.getElementById('steps-console'));
+    renderSummary(nfa, regex, tree);
+    // Clear test results
+    document.getElementById('test-result').innerHTML = '';
+    document.getElementById('test-console').innerHTML = '<div class="console-line info">Click <b>Test Batch</b> to auto-test common strings.</div>';
+    const allStates = new Set();
+    for (const t of nfa.transitions) { allStates.add(t.from); allStates.add(t.to); }
+    status.textContent = `✅ NFA built — ${allStates.size + (allStates.has(nfa.start) ? 0 : 1) + (allStates.has(nfa.accept) ? 0 : 1)} states, ${nfa.transitions.length} transitions`;
+  } catch (e) {
+    status.textContent = '❌ ' + e.message;
+    document.getElementById('diagram-container').innerHTML = `<div class="empty" style="color:var(--red)">Parse Error: ${esc(e.message)}</div>`;
+  }
+});
+
+/* EXAMPLES */
+document.querySelectorAll('.ex-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('regex-input').value = btn.dataset.re;
+    document.getElementById('convert').click();
+  });
+});
+
+/* CLEAR */
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('regex-input').value = '';
+  document.getElementById('test-input').value = '';
+  document.getElementById('status').textContent = 'Ready';
+  document.getElementById('test-result').innerHTML = '';
+  document.getElementById('diagram-container').innerHTML = '<div class="empty">Click <b>Convert to NFA</b>.</div>';
+  document.getElementById('trans-tb').innerHTML = '<tr><td colspan="4" class="empty">Click <b>Convert to NFA</b>.</td></tr>';
+  document.getElementById('tree-container').innerHTML = '<div class="empty">Click <b>Convert to NFA</b>.</div>';
+  document.getElementById('steps-console').innerHTML = '<div class="console-line info">Click <b>Convert to NFA</b>.</div>';
+  document.getElementById('sum-stats').innerHTML = '';
+  document.getElementById('formal-def').innerHTML = '<div class="console-line info">Click <b>Convert to NFA</b>.</div>';
+  document.getElementById('test-console').innerHTML = '<div class="console-line info">Click <b>Test Batch</b> to auto-test common strings.</div>';
+  currentNFA = null;
+});
+
+/* TEST SINGLE */
+document.getElementById('test-btn').addEventListener('click', () => {
+  if (!currentNFA) {
+    document.getElementById('test-result').innerHTML = '<span class="badge badge-red">Convert a regex first!</span>';
+    return;
+  }
+  const input = document.getElementById('test-input').value;
+  const result = simulateNFA(currentNFA, input);
+  const display = input === '' ? 'ε (empty)' : `"${esc(input)}"`;
+  if (result.accepted) {
+    let pathStr = result.path.map((p, i) => {
+      const stateList = [...p.states].sort((a, b) => a - b).map(s => 'q' + s).join(',');
+      return i === 0 ? `{${stateList}}` : `--${p.symbol}→ {${stateList}}`;
+    }).join(' ');
+    document.getElementById('test-result').innerHTML =
+      `<span class="badge badge-green" style="font-size:13px">✅ ACCEPTED</span> <span style="color:var(--text);font-size:13px;margin-left:6px">${display}</span>
+       <div style="margin-top:6px;font-family:monospace;font-size:11px;color:var(--muted);word-break:break-all">${esc(pathStr)}</div>`;
+  } else {
+    document.getElementById('test-result').innerHTML =
+      `<span class="badge badge-red" style="font-size:13px">❌ REJECTED</span> <span style="color:var(--text);font-size:13px;margin-left:6px">${display}</span>`;
+  }
+});
+
+/* Enter key triggers test */
+document.getElementById('test-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('test-btn').click();
+});
+document.getElementById('regex-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('convert').click();
+});
+
+/* TEST BATCH */
+document.getElementById('test-all-btn').addEventListener('click', () => {
+  if (!currentNFA) {
+    document.getElementById('test-console').innerHTML = '<div class="console-line fail">Convert a regex first!</div>';
+    return;
+  }
+  const regex = document.getElementById('regex-input').value.trim();
+  const con = document.getElementById('test-console');
+  con.innerHTML = '';
+  con.insertAdjacentHTML('beforeend', `<div class="console-line head">Batch Test for: ${esc(regex)}</div>`);
+  con.insertAdjacentHTML('beforeend', '<div class="console-line head">═══════   ════════════════════════════</div>');
+  // Generate test strings from the alphabet
+  const alphabet = [...new Set(currentNFA.transitions.map(t => t.symbol).filter(s => s !== 'ε'))].sort();
+  const testStrings = [''];
+  // Generate strings up to length 4
+  for (let len = 1; len <= 4; len++) {
+    const gen = (prefix, remaining) => {
+      if (remaining === 0) { testStrings.push(prefix); return; }
+      for (const ch of alphabet) gen(prefix + ch, remaining - 1);
+    };
+    gen('', len);
+  }
+  // Limit to first 60
+  const toTest = testStrings.slice(0, 60);
+  let accepted = 0, rejected = 0;
+  for (const s of toTest) {
+    const result = simulateNFA(currentNFA, s);
+    const display = s === '' ? 'ε (empty)' : `"${s}"`;
+    if (result.accepted) {
+      accepted++;
+      con.insertAdjacentHTML('beforeend', `<div class="console-line ok">  ✅ ${display}  →  ACCEPTED</div>`);
+    } else {
+      rejected++;
+      con.insertAdjacentHTML('beforeend', `<div class="console-line fail">  ❌ ${display}  →  REJECTED</div>`);
+    }
+  }
+  con.insertAdjacentHTML('beforeend', '<div class="console-line head" style="margin-top:8px">════════════════════════════════════</div>');
+  con.insertAdjacentHTML('beforeend', `<div class="console-line info">Tested ${toTest.length} strings: ${accepted} accepted, ${rejected} rejected</div>`);
+});
+
+/* Auto-convert on load */
+document.getElementById('convert').click();
+</script>
+</body>
+</html>

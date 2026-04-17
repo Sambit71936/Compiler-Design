@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Operator Precedence: LEADING & TRAILING Computation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#818cf8;--state-bg:#0f172a;--state-border:#334155;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px}
+.page{max-width:1440px;margin:0 auto}
+header{text-align:center;margin-bottom:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22)}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px}
+.sub{color:var(--muted);font-size:13px;max-width:850px;margin:0 auto;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:980px){.grid{grid-template-columns:1fr 1.15fr}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+textarea{width:100%;min-height:180px;padding:12px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:13px;resize:vertical;outline:none;tab-size:4;line-height:1.6}
+textarea:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7)}
+.controls{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn-run{background:linear-gradient(135deg,var(--green),#10b981);box-shadow:0 6px 18px rgba(52,211,153,.25)}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:80px}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap}
+.pbtn:first-child{border-radius:8px 0 0 8px}
+.pbtn:last-child{border-radius:0 8px 8px 0}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700}
+.hidden{display:none!important}
+.tw{max-height:560px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;background:#071427;z-index:1}
+th,td{padding:7px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:10.5px}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px}
+.sb{display:inline-block;padding:3px 7px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;margin:1px;white-space:nowrap}
+.sb-t{color:var(--green);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15)}
+.sb-e{color:var(--yellow);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15)}
+.sb-d{color:var(--pink);background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.15)}
+.sb-n{color:var(--accent);background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15)}
+.parse-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.stat-value{font-size:20px;font-weight:800;color:var(--accent)}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:14px;min-height:160px;max-height:560px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12px}
+.cl{line-height:1.65}.cl.info{color:var(--muted)}.cl.ok{color:var(--green)}.cl.err{color:var(--red)}.cl.warn{color:var(--yellow)}.cl.out{color:#f0f0f0}
+.pt-cell{text-align:center!important;font-family:"JetBrains Mono",monospace;font-size:12.5px;padding:8px!important;min-width:50px}
+.pt-cell.rel-lt{color:var(--accent);background:rgba(56,189,248,.08);font-weight:700}
+.pt-cell.rel-gt{color:var(--orange);background:rgba(251,146,60,.08);font-weight:700}
+.pt-cell.rel-eq{color:var(--green);background:rgba(52,211,153,.1);font-weight:700}
+.pt-cell.conflict{color:var(--red);background:rgba(239,68,68,.1);font-weight:700}
+.pt-cell.empty-c{color:#283040}
+.th-group{text-align:center!important;border-bottom:2px solid var(--border);background:#0b192e}
+.help-box{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:10px;font-size:12px;line-height:1.55}
+.help-box h3{color:var(--accent);font-size:13px;margin-bottom:5px}
+.help-box code{background:rgba(0,0,0,.3);padding:2px 5px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:11.5px}
+.error-banner{padding:12px 16px;border-radius:10px;font-weight:700;font-size:13px;text-align:center;margin-top:10px;background:rgba(239,68,68,.08);border:2px solid rgba(239,68,68,.25);color:var(--red)}
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">⚙️ Operator Precedence</div>
+  <h1>LEADING & TRAILING Sets</h1>
+  <p class="sub">Enter an Operator Grammar to automatically compute LEADING and TRAILING sets for all non-terminals, and construct the Operator Precedence Relation Table.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">📝 Grammar Input</div>
+    <textarea id="grammar" spellcheck="false">E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id</textarea>
+    <div class="controls">
+      <button class="btn" id="build">⚡ Compute Sets & Table</button>
+      <button class="btn-sec" id="demo1">Arithmetic</button>
+      <button class="btn-sec" id="demo2">Boolean</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <div id="verdict-box"></div>
+    <div class="help-box" style="margin-top: 18px;">
+      <h3>📖 Operator Grammar Rules</h3>
+      <div>• No epsilon (<code>ε</code>) productions allowed.</div>
+      <div>• No two non-terminals can be adjacent on the RHS.</div>
+      <div>• <strong>LEADING(A):</strong> The first terminal symbol(s) derived from A.</div>
+      <div>• <strong>TRAILING(A):</strong> The last terminal symbol(s) derived from A.</div>
+      <div style="margin-top: 8px; font-style: italic; color: var(--muted)">Symbols are separated by spaces. Arrow can be <code>-&gt;</code> or <code>→</code>.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="leading">LEADING Sets</button>
+      <button class="pbtn" data-tab="trailing">TRAILING Sets</button>
+      <button class="pbtn" data-tab="table">Precedence Table</button>
+      <button class="pbtn" data-tab="grammar">Parsed Grammar</button>
+      <button class="pbtn" data-tab="summary">Summary</button>
+    </div>
+    
+    <div id="panel-leading"><div class="tw" id="leading-w"><div class="empty">Click <b>Compute Sets & Table</b>.</div></div></div>
+    <div id="panel-trailing" class="hidden"><div class="tw" id="trailing-w"><div class="empty">Click <b>Compute Sets & Table</b>.</div></div></div>
+    <div id="panel-table" class="hidden"><div class="tw" style="padding:10px" id="table-w"><div class="empty">Click <b>Compute Sets & Table</b>.</div></div></div>
+    <div id="panel-grammar" class="hidden"><div class="tw" id="grammar-w"><div class="empty">Click <b>Compute Sets & Table</b>.</div></div></div>
+    <div id="panel-summary" class="hidden"><div class="parse-summary" id="sum-stats"></div><div class="console-wrap" id="console"><div class="cl info">Click <b>Compute Sets & Table</b>.</div></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CONSTANTS & UTILS
+   ═══════════════════════════════════════════════════ */
+const EPS='ε', DOLLAR='$';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ═══════════════════════════════════════════════════
+   GRAMMAR PARSER & VALIDATION
+   ═══════════════════════════════════════════════════ */
+function parseGrammar(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('//'));
+  const prods=[], ntSet=new Set(), allSym=new Set();
+  let start=null; const ntOrder=[];
+  
+  for(const line of lines){
+    const m=line.match(/^(.+?)\s*(?:->|::=|→)\s*(.+)$/);
+    if(!m)continue;
+    const lhs=m[1].trim(), rhsStr=m[2].trim();
+    if(!start)start=lhs; ntSet.add(lhs);
+    if(!ntOrder.includes(lhs))ntOrder.push(lhs);
+    for(const alt of rhsStr.split('|').map(a=>a.trim())){
+      const syms=tokenRHS(alt);
+      prods.push({lhs, rhs:syms, str:`${lhs} → ${syms.join(' ')}`});
+      for(const s of syms)allSym.add(s);
+    }
+  }
+  
+  const terms=new Set();
+  for(const s of allSym){if(!ntSet.has(s))terms.add(s);}
+  
+  // Validate Operator Grammar Properties
+  let errors = [];
+  if (terms.has(EPS)) errors.push("Grammar contains ε-productions.");
+  
+  for (const p of prods) {
+    for (let i = 0; i < p.rhs.length - 1; i++) {
+      if (ntSet.has(p.rhs[i]) && ntSet.has(p.rhs[i+1])) {
+        errors.push(`Adjacent non-terminals found in: ${p.str}`);
+      }
+    }
+  }
+
+  return {prods, ntSet, ntOrder, terms, start, errors};
+}
+
+function tokenRHS(rhs){
+  const t=[];
+  for(let p of rhs.split(/\s+/)){
+    if(!p)continue;
+    if(p==='epsilon'||p==='eps'||p==="''"||p==='e') p=EPS;
+    t.push(p);
+  }
+  return t.length ? t : [EPS];
+}
+
+/* ═══════════════════════════════════════════════════
+   LEADING & TRAILING ALGORITHMS
+   ═══════════════════════════════════════════════════ */
+function computeLeading(G){
+  const leading = {};
+  G.ntSet.forEach(nt => leading[nt] = new Set());
+  let changed = true;
+
+  // Base Cases
+  for(const p of G.prods){
+    const A = p.lhs;
+    const rhs = p.rhs;
+    if (rhs.length === 0 || rhs[0] === EPS) continue;
+    
+    // Rule 1: A -> a...
+    if (G.terms.has(rhs[0])) {
+      leading[A].add(rhs[0]);
+    } 
+    // Rule 2: A -> B a...
+    else if (rhs.length > 1 && G.ntSet.has(rhs[0]) && G.terms.has(rhs[1])) {
+      leading[A].add(rhs[1]);
+    }
+  }
+
+  // Iterative Step: A -> B... means LEADING(B) is in LEADING(A)
+  while(changed){
+    changed = false;
+    for(const p of G.prods){
+      const A = p.lhs;
+      const rhs = p.rhs;
+      if (rhs.length > 0 && G.ntSet.has(rhs[0])) {
+        const B = rhs[0];
+        const prevSize = leading[A].size;
+        leading[B].forEach(term => leading[A].add(term));
+        if (leading[A].size > prevSize) changed = true;
+      }
+    }
+  }
+  return leading;
+}
+
+function computeTrailing(G){
+  const trailing = {};
+  G.ntSet.forEach(nt => trailing[nt] = new Set());
+  let changed = true;
+
+  // Base Cases
+  for(const p of G.prods){
+    const A = p.lhs;
+    const rhs = p.rhs;
+    if (rhs.length === 0 || rhs[0] === EPS) continue;
+    
+    const last = rhs[rhs.length - 1];
+    // Rule 1: A -> ...a
+    if (G.terms.has(last)) {
+      trailing[A].add(last);
+    } 
+    // Rule 2: A -> ...a B
+    else if (rhs.length > 1 && G.ntSet.has(last) && G.terms.has(rhs[rhs.length - 2])) {
+      trailing[A].add(rhs[rhs.length - 2]);
+    }
+  }
+
+  // Iterative Step: A -> ...B means TRAILING(B) is in TRAILING(A)
+  while(changed){
+    changed = false;
+    for(const p of G.prods){
+      const A = p.lhs;
+      const rhs = p.rhs;
+      if (rhs.length > 0 && G.ntSet.has(rhs[rhs.length - 1])) {
+        const B = rhs[rhs.length - 1];
+        const prevSize = trailing[A].size;
+        trailing[B].forEach(term => trailing[A].add(term));
+        if (trailing[A].size > prevSize) changed = true;
+      }
+    }
+  }
+  return trailing;
+}
+
+/* ═══════════════════════════════════════════════════
+   PRECEDENCE TABLE CONSTRUCTION
+   ═══════════════════════════════════════════════════ */
+function buildPrecedenceTable(G, leading, trailing) {
+  const terms = [...G.terms, DOLLAR];
+  const table = {};
+  const conflicts = [];
+  
+  terms.forEach(t1 => {
+    table[t1] = {};
+    terms.forEach(t2 => table[t1][t2] = []);
+  });
+
+  const addRel = (t1, rel, t2) => {
+    if (!table[t1][t2].includes(rel)) {
+      table[t1][t2].push(rel);
+      if (table[t1][t2].length > 1) conflicts.push(`Conflict: ${t1} ${table[t1][t2].join(', ')} ${t2}`);
+    }
+  };
+
+  // Rule 1, 2, 3 based on RHS structure
+  for (const p of G.prods) {
+    const rhs = p.rhs;
+    for (let i = 0; i < rhs.length - 1; i++) {
+      const x1 = rhs[i];
+      const x2 = rhs[i+1];
+
+      // a = b  (two adjacent terminals)
+      if (G.terms.has(x1) && G.terms.has(x2)) {
+        addRel(x1, '=', x2);
+      }
+      
+      // a <. LEADING(B)
+      if (G.terms.has(x1) && G.ntSet.has(x2)) {
+        leading[x2].forEach(b => addRel(x1, '<', b));
+      }
+      
+      // TRAILING(B) .> a
+      if (G.ntSet.has(x1) && G.terms.has(x2)) {
+        trailing[x1].forEach(b => addRel(b, '>', x2));
+      }
+      
+      // a = b (terminal, Non-term, terminal)
+      if (i < rhs.length - 2) {
+        const x3 = rhs[i+2];
+        if (G.terms.has(x1) && G.ntSet.has(x2) && G.terms.has(x3)) {
+          addRel(x1, '=', x3);
+        }
+      }
+    }
+  }
+
+  // Rule 4: $ <. LEADING(Start) and TRAILING(Start) .> $
+  leading[G.start].forEach(b => addRel(DOLLAR, '<', b));
+  trailing[G.start].forEach(b => addRel(b, '>', DOLLAR));
+
+  return { table, terms, conflicts };
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERING
+   ═══════════════════════════════════════════════════ */
+function badge(sym){
+  if(sym===EPS) return `<span class="sb sb-e">ε</span>`;
+  if(sym===DOLLAR) return `<span class="sb sb-d">$</span>`;
+  return `<span class="sb sb-t">${esc(sym)}</span>`;
+}
+
+function renderSets(sets, id, label){
+  const el=document.getElementById(id);
+  let h=`<table><thead><tr><th style="width:120px">Non-Terminal</th><th>${label}</th></tr></thead><tbody>`;
+  for(const [nt, set] of Object.entries(sets).sort(([a],[b])=>a.localeCompare(b))){
+    const sorted=[...set].sort();
+    h+=`<tr><td><span class="sb sb-n">${esc(nt)}</span></td><td>{ ${sorted.map(badge).join(' ')} }</td></tr>`;
+  }
+  h+='</tbody></table>'; el.innerHTML=h;
+}
+
+function renderGrammar(G, container){
+  let h='<table><thead><tr><th>#</th><th>Production</th></tr></thead><tbody>';
+  G.prods.forEach((p, i)=>{
+    h+=`<tr><td style="color:var(--muted)">${i+1}</td><td style="font-family:'JetBrains Mono',monospace;font-size:13px">${esc(p.str)}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  container.innerHTML=h;
+}
+
+function renderTable(tableData, container){
+  const { table, terms, conflicts } = tableData;
+  let h=`<div style="overflow-x:auto"><table><thead><tr><th class="pt-nt" style="text-align:center; background:#1e293b; border-right:1px solid var(--border)">T</th>`;
+  
+  for(const t of terms) h+=`<th class="pt-t" style="text-align:center">${esc(t)}</th>`;
+  h+='</tr></thead><tbody>';
+
+  for(const t1 of terms){
+    h+=`<tr><td class="pt-t" style="text-align:center; background:#1e293b; border-right:1px solid var(--border); font-weight:bold">${esc(t1)}</td>`;
+    
+    for(const t2 of terms){
+      const rels = table[t1][t2];
+      if(rels.length === 0) h+=`<td class="pt-cell empty-c">—</td>`;
+      else if(rels.length === 1){
+        let r = rels[0];
+        let cls = r==='<' ? 'rel-lt' : (r==='>' ? 'rel-gt' : 'rel-eq');
+        let symbol = r==='<' ? '⋖' : (r==='>' ? '⋗' : '≐');
+        h+=`<td class="pt-cell ${cls}">${symbol}</td>`;
+      } else {
+        h+=`<td class="pt-cell conflict">${rels.join(',')}</td>`;
+      }
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+
+  if(conflicts.length > 0){
+    h+=`<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15)"><div style="color:var(--red);font-weight:700;font-size:12px;margin-bottom:4px">⚠️ Conflicts Detected! Not an Operator Precedence Grammar.</div>`;
+    for(const c of conflicts){
+      h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text);margin-bottom:2px">${esc(c)}</div>`;
+    }
+    h+=`</div>`;
+  } else {
+    h+=`<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);color:var(--green);font-weight:700;font-size:12px">✅ Valid Operator Precedence Matrix generated cleanly!</div>`;
+  }
+  
+  h+=`<div style="margin-top:12px;font-size:12px;color:var(--muted)">Legend: <b>⋖</b> (Yields precedence to) | <b>⋗</b> (Takes precedence over) | <b>≐</b> (Same precedence)</div>`
+  container.innerHTML=h;
+}
+
+function renderSummary(G, tableData, container){
+  const st = document.getElementById('sum-stats');
+  const isValid = G.errors.length === 0 && tableData.conflicts.length === 0;
+  
+  st.innerHTML=`
+    <div class="stat-card"><div class="stat-value" style="color:${isValid?'var(--green)':'var(--red)'}">${isValid?'YES':'NO'}</div><div class="stat-label">Valid OPG?</div></div>
+    <div class="stat-card"><div class="stat-value">${G.ntSet.size}</div><div class="stat-label">Non-Terms</div></div>
+    <div class="stat-card"><div class="stat-value">${G.terms.size}</div><div class="stat-label">Terminals</div></div>
+    <div class="stat-card"><div class="stat-value">${G.prods.length}</div><div class="stat-label">Productions</div></div>
+    <div class="stat-card"><div class="stat-value">${tableData.conflicts.length}</div><div class="stat-label">Conflicts</div></div>`;
+  
+  let h=`<div class="cl info">╔════════════════════════════════════════════════╗</div>
+<div class="cl info">║    Operator Precedence Parsing — Summary       ║</div>
+<div class="cl info">╚════════════════════════════════════════════════╝</div><div class="cl out">&nbsp;</div>`;
+  
+  if(G.errors.length > 0) {
+    h+=`<div class="cl err">⚠️ Invalid Operator Grammar Structure:</div>`;
+    G.errors.forEach(e => h+=`<div class="cl warn">   - ${esc(e)}</div>`);
+  } else if (!isValid) {
+    h+=`<div class="cl err">⚠️ Grammar parses, but contains Precedence Relation Conflicts.</div>`;
+  } else {
+    h+=`<div class="cl ok">✅ Strict Operator Precedence Grammar detected. Ready for Bottom-Up parsing.</div>`;
+  }
+  container.innerHTML=h;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE & EVENTS
+   ═══════════════════════════════════════════════════ */
+
+// Tabs Switching
+document.querySelectorAll('.pbtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const target=btn.dataset.tab;
+    ['leading','trailing','table','grammar','summary'].forEach(p=>{
+      document.getElementById('panel-'+p).classList.toggle('hidden', p!==target);
+    });
+  });
+});
+
+// Build Logic
+document.getElementById('build').addEventListener('click', ()=>{
+  const text=document.getElementById('grammar').value;
+  const status=document.getElementById('status');
+  const vb = document.getElementById('verdict-box');
+  status.textContent='Computing...';
+  vb.innerHTML = '';
+  
+  try{
+    const G = parseGrammar(text);
+    if(!G.start || !G.prods.length){
+      status.textContent='Error: No valid productions.';
+      return;
+    }
+    
+    if (G.errors.length > 0) {
+      vb.innerHTML=`<div class="error-banner">❌ Grammar Error: ${G.errors[0]}<br><span style="font-size:11px;font-weight:normal">Operator grammars cannot have ε-productions or adjacent non-terminals.</span></div>`;
+    }
+    
+    const leading = computeLeading(G);
+    const trailing = computeTrailing(G);
+    const tableData = buildPrecedenceTable(G, leading, trailing);
+    
+    renderSets(leading, 'leading-w', 'LEADING Set');
+    renderSets(trailing, 'trailing-w', 'TRAILING Set');
+    renderGrammar(G, document.getElementById('grammar-w'));
+    renderTable(tableData, document.getElementById('table-w'));
+    renderSummary(G, tableData, document.getElementById('console'));
+    
+    const cCount = tableData.conflicts.length;
+    status.textContent = `✅ Sets Computed — ${G.ntSet.size} NTs, ${G.terms.size} Ts ${cCount===0 && G.errors.length===0 ? '— Valid OPG ✓' : '— Conflicts/Errors ⚠️'}`;
+    
+    document.querySelector('[data-tab="leading"]').click();
+  }catch(e){
+    status.textContent='Error: '+e.message; 
+    console.error(e);
+  }
+});
+
+
+document.getElementById('clear').addEventListener('click', ()=>{
+  document.getElementById('grammar').value=''; 
+  document.getElementById('status').textContent='Ready';
+  document.getElementById('verdict-box').innerHTML='';
+  ['leading-w','trailing-w','grammar-w','table-w'].forEach(id=>document.getElementById(id).innerHTML='<div class="empty">Click <b>Compute Sets & Table</b>.</div>');
+  document.getElementById('sum-stats').innerHTML='';
+  document.getElementById('console').innerHTML='<div class="cl info">Click <b>Compute Sets & Table</b>.</div>';
+});
+
+/* DEMOS */
+document.getElementById('demo1').addEventListener('click', ()=>{
+  document.getElementById('grammar').value=`E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id`;
+  document.getElementById('build').click();
+});
+document.getElementById('demo2').addEventListener('click', ()=>{
+  document.getElementById('grammar').value=`S -> ( L ) | a\nL -> L , S | S`;
+  document.getElementById('build').click();
+});
+
+// Init if text exists
+if(document.getElementById('grammar').value.trim() !== '') {
+    // document.getElementById('build').click(); // uncomment if you want auto-run on load
+}
+</script>
+</body>
+</html>

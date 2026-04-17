@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SLR(1) Shift-Reduce Parser — Simulation</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#818cf8;--state-bg:#0f172a;--state-border:#334155;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px}
+.page{max-width:1440px;margin:0 auto}
+header{text-align:center;margin-bottom:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22)}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px}
+.sub{color:var(--muted);font-size:13px;max-width:850px;margin:0 auto;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:980px){.grid{grid-template-columns:1fr 1.15fr}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+textarea{width:100%;min-height:180px;padding:12px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:13px;resize:vertical;outline:none;tab-size:4;line-height:1.6}
+textarea:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7)}
+.controls{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn-run{background:linear-gradient(135deg,var(--green),#10b981);box-shadow:0 6px 18px rgba(52,211,153,.25)}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:80px}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap}
+.pbtn:first-child{border-radius:8px 0 0 8px}
+.pbtn:last-child{border-radius:0 8px 8px 0}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700}
+.hidden{display:none!important}
+.tw{max-height:560px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;background:#071427;z-index:1}
+th,td{padding:7px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:10.5px}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px}
+.sb{display:inline-block;padding:3px 7px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;margin:1px;white-space:nowrap}
+.sb-t{color:var(--green);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15)}
+.sb-e{color:var(--yellow);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15)}
+.sb-d{color:var(--pink);background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.15)}
+.sb-n{color:var(--accent);background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15)}
+.parse-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.stat-value{font-size:20px;font-weight:800;color:var(--accent)}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:14px;min-height:160px;max-height:560px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:12px}
+.cl{line-height:1.65}.cl.info{color:var(--muted)}.cl.ok{color:var(--green)}.cl.err{color:var(--red)}.cl.warn{color:var(--yellow)}.cl.out{color:#f0f0f0}
+.pt-cell{text-align:center!important;font-family:"JetBrains Mono",monospace;font-size:10.5px;padding:5px 3px!important;min-width:50px}
+.pt-cell.act-s{color:var(--accent);background:rgba(56,189,248,.05)}
+.pt-cell.act-r{color:var(--orange);background:rgba(251,146,60,.05)}
+.pt-cell.act-acc{color:var(--green);background:rgba(52,211,153,.1);font-weight:700}
+.pt-cell.goto-c{color:var(--purple);background:rgba(192,132,252,.04);font-weight:700}
+.pt-cell.conflict{color:var(--red);background:rgba(239,68,68,.1);font-weight:700}
+.pt-cell.empty-c{color:#283040}
+.th-group{text-align:center!important;border-bottom:2px solid var(--border);background:#0b192e}
+.help-box{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:10px;font-size:12px;line-height:1.55}
+.help-box h3{color:var(--accent);font-size:13px;margin-bottom:5px}
+.help-box code{background:rgba(0,0,0,.3);padding:2px 5px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:11.5px}
+/* States Visualization */
+.state-box{background:var(--state-bg);border:1px solid var(--state-border);border-radius:8px;padding:10px;margin-bottom:10px}
+.state-header{font-weight:800;color:var(--accent2);font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between}
+.state-item{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:#cbd5e1;padding:2px 0}
+.state-dot{color:var(--pink);font-weight:900}
+/* Simulation panel */
+.sim-section{margin-top:14px;border-top:1px solid var(--border);padding-top:14px;flex-grow:1;display:flex;flex-direction:column}
+.sim-input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono",monospace;font-size:13px;outline:none;margin-bottom:8px}
+.sim-input:focus{border-color:rgba(56,189,248,.7);box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+.sim-controls{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+/* Trace table */
+.trace-row{font-size:11.5px}
+.trace-row td{vertical-align:middle;padding:6px 8px;font-family:"JetBrains Mono",monospace}
+.trace-row.shift-row{background:rgba(56,189,248,.03)}
+.trace-row.reduce-row{background:rgba(251,146,60,.04)}
+.trace-row.error-row{background:rgba(239,68,68,.04)}
+.trace-row.accept-row{background:rgba(52,211,153,.06)}
+.action-shift{color:var(--accent);font-weight:600}
+.action-reduce{color:var(--orange);font-weight:600}
+.action-error{color:var(--red);font-weight:700}
+.action-accept{color:var(--green);font-weight:800;font-size:12px}
+/* Stack visualization */
+.stack-vis{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.st-node{display:inline-flex;align-items:center;border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.st-state{background:#1e293b;color:var(--accent2);padding:2px 6px;font-weight:700;font-size:10.5px}
+.st-sym{background:rgba(255,255,255,.05);padding:2px 6px;font-size:10.5px;color:#e2e8f0}
+.st-sym.nt{color:var(--accent)}
+.st-sym.t{color:var(--green)}
+/* Verdict banner */
+.verdict{padding:12px 16px;border-radius:10px;font-weight:700;font-size:14px;text-align:center;margin-top:10px}
+.verdict.accepted{background:rgba(52,211,153,.08);border:2px solid rgba(52,211,153,.25);color:var(--green)}
+.verdict.rejected{background:rgba(239,68,68,.08);border:2px solid rgba(239,68,68,.25);color:var(--red)}
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">🔄 Bottom-Up Parsing</div>
+  <h1>SLR(1) Shift-Reduce Parser</h1>
+  <p class="sub">Enter a context-free grammar → generates the LR(0) Automaton & FIRST/FOLLOW sets → builds the SLR(1) parse table (ACTION & GOTO) → validates input strings with a bottom-up stack trace.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">📝 Grammar Input</div>
+    <textarea id="grammar" spellcheck="false">E  -> E + T | T
+T  -> T * F | F
+F  -> ( E ) | id</textarea>
+    <div class="controls">
+      <button class="btn" id="build">⚡ Build Parse Table</button>
+      <button class="btn-sec" id="demo1">Arithm</button>
+      <button class="btn-sec" id="demo2">If-Else</button>
+      <button class="btn-sec" id="demo3">Lists</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <div class="sim-section">
+      <div class="card-title">🔬 Parse Input String</div>
+      <input type="text" class="sim-input" id="sim-input" placeholder="e.g.: id + id * id" value="id + id * id">
+      <div class="sim-controls">
+        <button class="btn btn-run" id="parse-btn">▶ Parse</button>
+        <button class="btn-sec" id="step-btn">⏭ Step-by-Step</button>
+        <button class="btn-sec" id="reset-btn">⟲ Reset</button>
+        <span class="status" id="sim-status"></span>
+      </div>
+      <div id="verdict-box"></div>
+      <div style="flex-grow:1;overflow:auto;margin-top:8px;min-height:200px" id="sim-output">
+        <div class="empty" style="font-size:12px">Build table first, then parse an input string.</div>
+      </div>
+    </div>
+    <div class="help-box">
+      <h3>📖 Syntax Guide</h3>
+      <div>• <code>A -&gt; α | β</code> — one production per line</div>
+      <div>• Epsilon: <code>ε</code>, <code>epsilon</code>, <code>eps</code></div>
+      <div>• Top-most non-terminal will be augmented to <code>S' -&gt; S</code></div>
+      <div>• Terminals and non-terminals are auto-detected</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="trace">Parse Trace</button>
+      <button class="pbtn" data-tab="table">ACTION & GOTO</button>
+      <button class="pbtn" data-tab="states">LR(0) Automaton</button>
+      <button class="pbtn" data-tab="first">FIRST</button>
+      <button class="pbtn" data-tab="follow">FOLLOW</button>
+      <button class="pbtn" data-tab="grammar">Grammar</button>
+      <button class="pbtn" data-tab="summary">Summary</button>
+    </div>
+    <div id="panel-trace"><div id="trace-w"><div class="empty">Build table, then parse an input string to see the full bottom-up stack trace.</div></div></div>
+    <div id="panel-table" class="hidden"><div class="tw" id="table-w"><div class="empty">Click <b>Build Parse Table</b>.</div></div></div>
+    <div id="panel-states" class="hidden"><div class="tw" style="padding:10px" id="states-w"><div class="empty">Click <b>Build Parse Table</b>.</div></div></div>
+    <div id="panel-first" class="hidden"><div class="tw" id="first-w"><div class="empty">Click <b>Build Parse Table</b>.</div></div></div>
+    <div id="panel-follow" class="hidden"><div class="tw" id="follow-w"><div class="empty">Click <b>Build Parse Table</b>.</div></div></div>
+    <div id="panel-grammar" class="hidden"><div class="tw" id="grammar-w"><div class="empty">Click <b>Build Parse Table</b>.</div></div></div>
+    <div id="panel-summary" class="hidden"><div class="parse-summary" id="sum-stats"></div><div class="console-wrap" id="console"><div class="cl info">Click <b>Build Parse Table</b>.</div></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CONSTANTS & UTILS
+   ═══════════════════════════════════════════════════ */
+const EPS='ε', DOLLAR='$';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ═══════════════════════════════════════════════════
+   GRAMMAR PARSER
+   ═══════════════════════════════════════════════════ */
+function parseGrammar(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('//'));
+  const prods=[], ntSet=new Set(), allSym=new Set();
+  let start=null; const ntOrder=[];
+  for(const line of lines){
+    const m=line.match(/^(.+?)\s*(?:->|::=|→)\s*(.+)$/);
+    if(!m)continue;
+    const lhs=m[1].trim(), rhsStr=m[2].trim();
+    if(!start)start=lhs; ntSet.add(lhs);
+    if(!ntOrder.includes(lhs))ntOrder.push(lhs);
+    for(const alt of rhsStr.split('|').map(a=>a.trim())){
+      const syms=tokenRHS(alt);
+      prods.push({lhs, rhs:syms, str:`${lhs} → ${syms.join(' ')}`});
+      for(const s of syms)allSym.add(s);
+    }
+  }
+  const terms=new Set();
+  for(const s of allSym){if(s!==EPS&&!ntSet.has(s))terms.add(s);}
+  return {prods, ntSet, ntOrder, terms, start};
+}
+function tokenRHS(rhs){
+  const t=[];
+  for(let p of rhs.split(/\s+/)){
+    if(!p)continue;
+    if(p==='epsilon'||p==='eps'||p==="''"||p==='e') p=EPS;
+    t.push(p);
+  }
+  return t.length ? t : [EPS];
+}
+
+/* ═══════════════════════════════════════════════════
+   FIRST & FOLLOW SETS
+   ═══════════════════════════════════════════════════ */
+function computeFirst(G){
+  const {prods, ntSet, terms} = G;
+  const first={};
+  for(const nt of ntSet) first[nt]=new Set();
+  for(const t of terms) first[t]=new Set([t]);
+  first[EPS]=new Set([EPS]);
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const {lhs, rhs} of prods){
+      if(rhs.length===1 && rhs[0]===EPS){
+        if(!first[lhs].has(EPS)){first[lhs].add(EPS); changed=true;}
+        continue;
+      }
+      let allEps=true;
+      for(const sym of rhs){
+        const sf=first[sym] || new Set();
+        for(const s of sf){if(s!==EPS && !first[lhs].has(s)){first[lhs].add(s); changed=true;}}
+        if(!sf.has(EPS)){allEps=false; break;}
+      }
+      if(allEps && !first[lhs].has(EPS)){first[lhs].add(EPS); changed=true;}
+    }
+  }
+  return first;
+}
+
+function computeFollow(G, firstSets){
+  const {prods, ntSet, start} = G;
+  const follow={};
+  for(const nt of ntSet) follow[nt]=new Set();
+  follow[start].add(DOLLAR);
+  function firstOfSeq(seq){
+    const r=new Set();
+    for(const sym of seq){
+      const sf=firstSets[sym] || new Set([sym]);
+      for(const s of sf){if(s!==EPS) r.add(s);}
+      if(!sf.has(EPS)) return r;
+    }
+    r.add(EPS); return r;
+  }
+  let changed=true;
+  while(changed){
+    changed=false;
+    for(const {lhs, rhs} of prods){
+      for(let i=0; i<rhs.length; i++){
+        const B=rhs[i]; if(!ntSet.has(B)) continue;
+        const beta=rhs.slice(i+1);
+        if(beta.length>0){
+          const fb=firstOfSeq(beta);
+          for(const s of fb){if(s!==EPS && !follow[B].has(s)){follow[B].add(s); changed=true;}}
+          if(fb.has(EPS)){
+            for(const s of follow[lhs]){if(!follow[B].has(s)){follow[B].add(s); changed=true;}}
+          }
+        }else{
+          for(const s of follow[lhs]){if(!follow[B].has(s)){follow[B].add(s); changed=true;}}
+        }
+      }
+    }
+  }
+  return follow;
+}
+
+/* ═══════════════════════════════════════════════════
+   SLR(1) AUTOMATON & TABLE
+   ═══════════════════════════════════════════════════ */
+function buildSLRTable(G, followSets){
+  const {prods, ntSet, ntOrder, terms, start} = G;
+  
+  // 1. Augment Grammar & handle Epsilon for LR representation
+  const startP = start + "'";
+  const lrProds = prods.map(p => ({
+    ...p,
+    lrRhs: p.rhs.length===1 && p.rhs[0]===EPS ? [] : p.rhs
+  }));
+  const augProds = [
+    {lhs: startP, rhs: [start], lrRhs: [start], str: `${startP} → ${start}`}
+  ].concat(lrProds);
+  
+  const allNt = new Set([startP, ...ntSet]);
+  const allNtOrder = [startP, ...ntOrder];
+  const allTerms = [...terms].sort();
+  const allSymbols = [...allTerms, ...allNtOrder];
+
+  // 2. Automaton Construction
+  function closure(itemStrs) {
+    let items = new Set(itemStrs);
+    let changed = true;
+    while(changed){
+      changed = false;
+      for(let itemStr of items){
+        let [pIdx, dot] = itemStr.split(',').map(Number);
+        let prod = augProds[pIdx];
+        if(dot < prod.lrRhs.length){
+          let B = prod.lrRhs[dot];
+          if(allNt.has(B)){
+            for(let i=0; i<augProds.length; i++){
+              if(augProds[i].lhs === B){
+                let newItem = `${i},0`;
+                if(!items.has(newItem)){
+                  items.add(newItem);
+                  changed = true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return [...items].sort();
+  }
+
+  function gotoSet(itemStrs, X) {
+    let nextItems = [];
+    for(let itemStr of itemStrs){
+      let [pIdx, dot] = itemStr.split(',').map(Number);
+      let prod = augProds[pIdx];
+      if(dot < prod.lrRhs.length && prod.lrRhs[dot] === X){
+        nextItems.push(`${pIdx},${dot+1}`);
+      }
+    }
+    return closure(nextItems);
+  }
+
+  let states = []; // Array of arrays of item strings
+  let stateMap = {}; // "item1|item2" -> stateIdx
+  let transitions = {}; // fromIdx -> { symbol: toIdx }
+
+  let startStateItems = closure(["0,0"]);
+  states.push(startStateItems);
+  stateMap[startStateItems.join('|')] = 0;
+
+  let queue = [0];
+  while(queue.length > 0){
+    let curr = queue.shift();
+    transitions[curr] = {};
+    for(let X of allSymbols){
+      let nextItems = gotoSet(states[curr], X);
+      if(nextItems.length > 0){
+        let key = nextItems.join('|');
+        if(!(key in stateMap)){
+          stateMap[key] = states.length;
+          states.push(nextItems);
+          queue.push(stateMap[key]);
+        }
+        transitions[curr][X] = stateMap[key];
+      }
+    }
+  }
+
+  // 3. Table Construction (ACTION and GOTO)
+  const ACTION = [];
+  const GOTO = [];
+  const termList = [...allTerms, DOLLAR];
+  const conflicts = [];
+
+  for(let i=0; i<states.length; i++){
+    let act = {}; termList.forEach(t => act[t] = []);
+    let got = {}; ntOrder.forEach(nt => got[nt] = null);
+    ACTION.push(act);
+    GOTO.push(got);
+
+    // Populate actions based on items in state
+    for(let itemStr of states[i]){
+      let [pIdx, dot] = itemStr.split(',').map(Number);
+      let prod = augProds[pIdx];
+
+      if(dot < prod.lrRhs.length){
+        let a = prod.lrRhs[dot];
+        if(terms.has(a) && transitions[i] && transitions[i][a] !== undefined){
+          let dest = transitions[i][a];
+          let actStr = 's' + dest;
+          if(!act[a].includes(actStr)) act[a].push(actStr);
+        }
+      } else {
+        if(pIdx === 0){
+          if(!act[DOLLAR].includes('acc')) act[DOLLAR].push('acc');
+        } else {
+          // Reduce item -> apply to all in FOLLOW(lhs)
+          let fw = followSets[prod.lhs] || new Set();
+          for(let a of fw){
+            let actStr = 'r' + pIdx;
+            if(!act[a].includes(actStr)) act[a].push(actStr);
+          }
+        }
+      }
+    }
+
+    // Populate goto
+    for(let nt of ntOrder){
+      if(transitions[i] && transitions[i][nt] !== undefined){
+        got[nt] = transitions[i][nt];
+      }
+    }
+
+    // Check conflicts in ACTION[i]
+    for(let t of termList){
+      if(act[t].length > 1){
+        conflicts.push({state: i, terminal: t, actions: act[t]});
+      }
+    }
+  }
+
+  return { augProds, states, transitions, ACTION, GOTO, termList, conflicts };
+}
+
+/* ═══════════════════════════════════════════════════
+   PARSE SIMULATION (Shift-Reduce)
+   ═══════════════════════════════════════════════════ */
+function runSLRParse(G, tableData, inputStr){
+  const { augProds, ACTION, GOTO } = tableData;
+  const tokens = inputStr.trim().split(/\s+/).filter(s=>s);
+  tokens.push(DOLLAR);
+  
+  let stateStack = [0];
+  let symStack = [];
+  let steps = [];
+  let ip = 0;
+  let max = 500;
+  let n = 0;
+
+  while(n < max){
+    n++;
+    let s = stateStack[stateStack.length - 1];
+    let a = tokens[ip] || DOLLAR;
+    let actList = ACTION[s] && ACTION[s][a] ? ACTION[s][a] : [];
+    
+    // Create snapshot for logging
+    const snapStateStack = [...stateStack];
+    const snapSymStack = [...symStack];
+    const remaining = tokens.slice(ip);
+
+    if(actList.length === 0){
+      steps.push({step:n, stateStack:snapStateStack, symStack:snapSymStack, input:remaining, action:`❌ Error: No action for State ${s} on "${a}"`, cls:'error'});
+      break;
+    }
+
+    // Resolve conflicts by picking first (Usually Shift over Reduce, and earlier Prod over later)
+    // To ensure standard resolution: sort actions -> 's' comes before 'r'
+    actList.sort(); 
+    let act = actList[0];
+    let conflictWarning = actList.length > 1 ? ` (Warning: Conflict resolved to ${act})` : '';
+
+    if(act.startsWith('s')){
+      let dest = parseInt(act.substring(1));
+      stateStack.push(dest);
+      symStack.push({sym: a, isTerm: true});
+      ip++;
+      steps.push({step:n, stateStack:snapStateStack, symStack:snapSymStack, input:remaining, action:`Shift ${a} → State ${dest}${conflictWarning}`, cls:'shift'});
+    } 
+    else if(act.startsWith('r')){
+      let pIdx = parseInt(act.substring(1));
+      let prod = augProds[pIdx];
+      let popCount = prod.lrRhs.length;
+
+      for(let i=0; i<popCount; i++){
+        stateStack.pop();
+        symStack.pop();
+      }
+
+      let topState = stateStack[stateStack.length - 1];
+      let nextState = GOTO[topState][prod.lhs];
+      
+      if(nextState === undefined || nextState === null){
+        steps.push({step:n, stateStack:snapStateStack, symStack:snapSymStack, input:remaining, action:`❌ Error: GOTO[${topState}, ${prod.lhs}] is undefined after reduce`, cls:'error'});
+        break;
+      }
+
+      stateStack.push(nextState);
+      symStack.push({sym: prod.lhs, isTerm: false});
+      steps.push({step:n, stateStack:snapStateStack, symStack:snapSymStack, input:remaining, action:`Reduce by ${prod.str}${conflictWarning}`, cls:'reduce'});
+    } 
+    else if(act === 'acc'){
+      steps.push({step:n, stateStack:snapStateStack, symStack:snapSymStack, input:remaining, action:`✅ ACCEPT`, cls:'accept'});
+      break;
+    }
+  }
+  if(n >= max) steps.push({step:n+1, stateStack:[], symStack:[], input:[], action:'❌ Error: Limit exceeded.', cls:'error'});
+  
+  const accepted = steps.length > 0 && steps[steps.length-1].cls === 'accept';
+  return { steps, accepted, tokens };
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERING
+   ═══════════════════════════════════════════════════ */
+function badge(sym){
+  if(sym===EPS) return `<span class="sb sb-e">ε</span>`;
+  if(sym===DOLLAR) return `<span class="sb sb-d">$</span>`;
+  return `<span class="sb sb-t">${esc(sym)}</span>`;
+}
+function formatItem(itemStr, augProds) {
+  let [pIdx, dot] = itemStr.split(',').map(Number);
+  let prod = augProds[pIdx];
+  let rhs = [...prod.lrRhs];
+  rhs.splice(dot, 0, '<span class="state-dot">•</span>');
+  if (rhs.length === 1 && rhs[0] === '<span class="state-dot">•</span>') {} // Epsilon handled naturally by lrRhs=[]
+  return `${esc(prod.lhs)} → ${rhs.join(' ')}`;
+}
+
+function renderSets(sets, id, label){
+  const el=document.getElementById(id);
+  let h=`<table><thead><tr><th style="width:120px">${label}</th><th>Set Elements</th></tr></thead><tbody>`;
+  for(const [nt, set] of Object.entries(sets).sort(([a],[b])=>a.localeCompare(b))){
+    const sorted=[...set].sort();
+    h+=`<tr><td><span class="sb sb-n">${esc(nt)}</span></td><td>{ ${sorted.map(badge).join(' ')} }</td></tr>`;
+  }
+  h+='</tbody></table>'; el.innerHTML=h;
+}
+
+function renderStates(tableData, container){
+  const { states, augProds, transitions } = tableData;
+  let h='';
+  for(let i=0; i<states.length; i++){
+    h+=`<div class="state-box"><div class="state-header"><span>State I<sub>${i}</sub></span></div>`;
+    for(let itemStr of states[i]){
+      h+=`<div class="state-item">${formatItem(itemStr, augProds)}</div>`;
+    }
+    // Add transitions snippet
+    let trs = Object.keys(transitions[i]||{}).map(k => `goto(${esc(k)}) = I<sub>${transitions[i][k]}</sub>`);
+    if(trs.length) h+=`<div style="margin-top:6px;font-size:11px;color:var(--muted);border-top:1px solid var(--state-border);padding-top:4px">${trs.join(' | ')}</div>`;
+    h+=`</div>`;
+  }
+  container.innerHTML = h;
+}
+
+function renderTable(tableData, ntOrder, container){
+  const { ACTION, GOTO, termList, conflicts } = tableData;
+  let h=`<div style="overflow-x:auto"><table><thead><tr><th rowspan="2" class="pt-nt" style="vertical-align:bottom;text-align:center">State</th><th colspan="${termList.length}" class="th-group">ACTION</th><th colspan="${ntOrder.length}" class="th-group">GOTO</th></tr><tr>`;
+  
+  for(const t of termList) h+=`<th class="pt-t" style="text-align:center">${esc(t)}</th>`;
+  for(const nt of ntOrder) h+=`<th class="pt-nt" style="text-align:center">${esc(nt)}</th>`;
+  h+='</tr></thead><tbody>';
+
+  for(let i=0; i<ACTION.length; i++){
+    h+=`<tr><td class="pt-nt" style="text-align:center"><b>${i}</b></td>`;
+    
+    // ACTION
+    for(const t of termList){
+      const acts = ACTION[i][t] || [];
+      if(!acts.length) h+=`<td class="pt-cell empty-c">—</td>`;
+      else if(acts.length === 1){
+        let a = acts[0];
+        let cls = a.startsWith('s') ? 'act-s' : (a.startsWith('r') ? 'act-r' : 'act-acc');
+        h+=`<td class="pt-cell ${cls}">${esc(a)}</td>`;
+      } else {
+        h+=`<td class="pt-cell conflict">${acts.map(esc).join('<br>')}</td>`;
+      }
+    }
+    
+    // GOTO
+    for(const nt of ntOrder){
+      const g = GOTO[i][nt];
+      if(g === null || g === undefined) h+=`<td class="pt-cell empty-c">—</td>`;
+      else h+=`<td class="pt-cell goto-c">${g}</td>`;
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+
+  if(conflicts.length > 0){
+    h+=`<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15)"><div style="color:var(--red);font-weight:700;font-size:12px;margin-bottom:4px">⚠️ Not SLR(1) — ${conflicts.length} Conflict(s)</div>`;
+    for(const c of conflicts){
+      h+=`<div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text);margin-bottom:2px">ACTION[State ${c.state}, ${esc(c.terminal)}]: ${c.actions.map(esc).join(' | ')}</div>`;
+    }
+    h+=`</div>`;
+  } else {
+    h+=`<div style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15);color:var(--green);font-weight:700;font-size:12px">✅ Grammar is SLR(1) — No conflicts!</div>`;
+  }
+  container.innerHTML=h;
+}
+
+function renderGrammar(G, augProds, container){
+  let h='<table><thead><tr><th>#</th><th>Production</th></tr></thead><tbody>';
+  augProds.forEach((p, i)=>{
+    h+=`<tr><td style="color:var(--muted)">${i}</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(p.str)}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  container.innerHTML=h;
+}
+
+function renderSummary(G, tableData, container){
+  const st = document.getElementById('sum-stats');
+  const isSLR = tableData.conflicts.length === 0;
+  
+  st.innerHTML=`
+    <div class="stat-card"><div class="stat-value" style="color:${isSLR?'var(--green)':'var(--red)'}">${isSLR?'YES':'NO'}</div><div class="stat-label">SLR(1)?</div></div>
+    <div class="stat-card"><div class="stat-value">${tableData.states.length}</div><div class="stat-label">LR(0) States</div></div>
+    <div class="stat-card"><div class="stat-value">${G.ntSet.size}</div><div class="stat-label">Non-Terms</div></div>
+    <div class="stat-card"><div class="stat-value">${G.terms.size}</div><div class="stat-label">Terminals</div></div>
+    <div class="stat-card"><div class="stat-value">${tableData.augProds.length}</div><div class="stat-label">Productions</div></div>
+    <div class="stat-card"><div class="stat-value">${tableData.conflicts.length}</div><div class="stat-label">Conflicts</div></div>`;
+  
+  let h=`<div class="cl info">╔════════════════════════════════════════════════╗</div>
+<div class="cl info">║    SLR(1) Shift-Reduce Parser — Summary        ║</div>
+<div class="cl info">╚════════════════════════════════════════════════╝</div><div class="cl out">&nbsp;</div>`;
+  if(isSLR) h+=`<div class="cl ok">✅ Grammar is SLR(1) Parsable. Table constructed successfully.</div>`;
+  else {
+    h+=`<div class="cl err">⚠️ Grammar is NOT SLR(1) — Found ${tableData.conflicts.length} conflict(s).</div>`;
+    tableData.conflicts.forEach(c => h+=`<div class="cl warn">   State ${c.state} on '${esc(c.terminal)}': ${c.actions.join(', ')}</div>`);
+    h+=`<div class="cl out">   Parser will resolve conflicts by picking the first action (default: Shift).</div>`;
+  }
+  container.innerHTML=h;
+}
+
+/* ═══════════════════════════════════════════════════
+   TRACE RENDERING
+   ═══════════════════════════════════════════════════ */
+function formatStackVis(stateStack, symStack){
+  let h='';
+  for(let i=0; i<stateStack.length; i++){
+    if(i > 0){
+      let sym = symStack[i-1];
+      let cls = sym.isTerm ? 't' : 'nt';
+      h+=`<span class="st-sym ${cls}">${esc(sym.sym)}</span>`;
+    }
+    h+=`<span class="st-state">${stateStack[i]}</span>`;
+  }
+  return `<div class="stack-vis">${h}</div>`;
+}
+
+function renderTrace(result, container, limit){
+  const {steps, tokens} = result;
+  const n = limit != null ? limit : steps.length;
+  let h=`<div style="margin-bottom:8px;font-size:12px;color:var(--muted)">Input: <span style="color:var(--text);font-family:'JetBrains Mono',monospace">${esc(tokens.join(' '))}</span></div>`;
+  h+='<div class="tw"><table><thead><tr><th style="width:30px">#</th><th style="min-width:240px">Stack (States & Symbols)</th><th style="min-width:120px;text-align:right">Input</th><th>Action</th></tr></thead><tbody>';
+  
+  for(let i=0; i<n && i<steps.length; i++){
+    const s = steps[i];
+    let rowCls = 'trace-row ' + s.cls + '-row';
+    let actCls = 'action-' + s.cls;
+    
+    let stackHtml = formatStackVis(s.stateStack, s.symStack);
+    let inputStr = esc(s.input.join(' '));
+    
+    h+=`<tr class="${rowCls}"><td style="color:var(--muted);text-align:center">${s.step}</td><td>${stackHtml}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right;color:#cbd5e1">${inputStr}</td><td class="${actCls}" style="font-size:11.5px">${esc(s.action)}</td></tr>`;
+  }
+  h+='</tbody></table></div>';
+  container.innerHTML=h;
+}
+
+function renderSimTable(result, container, limit){
+  const {steps} = result;
+  const n = limit != null ? limit : steps.length;
+  let h='<table style="width:100%;font-size:11px"><thead><tr><th style="width:26px">#</th><th>Symbols</th><th style="text-align:right">Input</th><th>Action</th></tr></thead><tbody>';
+  for(let i=0; i<n && i<steps.length; i++){
+    const s = steps[i];
+    let ac = s.cls==='shift'?'color:var(--accent)':s.cls==='reduce'?'color:var(--orange)':s.cls==='error'?'color:var(--red);font-weight:700':'color:var(--green);font-weight:800';
+    let symStr = s.symStack.map(x=>x.sym).join(' ');
+    h+=`<tr><td style="color:var(--muted);text-align:center">${s.step}</td><td class="val" style="font-size:10.5px">${esc(symStr)}</td><td class="val" style="font-size:10.5px;text-align:right">${esc(s.input.join(' '))}</td><td style="${ac};font-size:10.5px">${esc(s.action)}</td></tr>`;
+  }
+  h+='</tbody></table>';
+  container.innerHTML=h;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE & EVENTS
+   ═══════════════════════════════════════════════════ */
+let CG=null, CTD=null, lastResult=null, stepIdx=0;
+
+// Tabs
+document.querySelectorAll('.pbtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const target=btn.dataset.tab;
+    ['trace','table','states','first','follow','grammar','summary'].forEach(p=>{
+      document.getElementById('panel-'+p).classList.toggle('hidden', p!==target);
+    });
+  });
+});
+
+document.getElementById('build').addEventListener('click', ()=>{
+  const text=document.getElementById('grammar').value;
+  const status=document.getElementById('status');
+  status.textContent='Building…';
+  try{
+    const G = parseGrammar(text);
+    if(!G.start || !G.prods.length){status.textContent='Error: No valid productions.';return;}
+    
+    const first = computeFirst(G);
+    const follow = computeFollow(G, first);
+    const tableData = buildSLRTable(G, follow);
+    
+    CG = G; CTD = tableData; lastResult = null; stepIdx = 0;
+    
+    renderSets(first, 'first-w', 'FIRST');
+    renderSets(follow, 'follow-w', 'FOLLOW');
+    renderGrammar(G, tableData.augProds, document.getElementById('grammar-w'));
+    renderStates(tableData, document.getElementById('states-w'));
+    renderTable(tableData, G.ntOrder, document.getElementById('table-w'));
+    renderSummary(G, tableData, document.getElementById('console'));
+    
+    document.getElementById('trace-w').innerHTML='<div class="empty">Table built! Enter input and click <b>Parse</b> or <b>Step-by-Step</b>.</div>';
+    document.getElementById('verdict-box').innerHTML='';
+    document.getElementById('sim-output').innerHTML='';
+    
+    const cCount = tableData.conflicts.length;
+    status.textContent = `✅ Built — ${tableData.states.length} states, ${cCount===0 ? 'SLR(1) ✓' : `${cCount} Conflicts ⚠️`}`;
+  }catch(e){status.textContent='Error: '+e.message; console.error(e);}
+});
+
+document.getElementById('parse-btn').addEventListener('click', ()=>{
+  if(!CG || !CTD){document.getElementById('sim-status').textContent='Build table first!'; return;}
+  const input=document.getElementById('sim-input').value.trim();
+  if(!input){document.getElementById('sim-status').textContent='Enter input string.'; return;}
+  
+  const result = runSLRParse(CG, CTD, input);
+  lastResult = result; stepIdx = result.steps.length;
+  
+  renderTrace(result, document.getElementById('trace-w'), null);
+  renderSimTable(result, document.getElementById('sim-output'));
+  
+  const vb = document.getElementById('verdict-box');
+  if(result.accepted){
+    vb.innerHTML=`<div class="verdict accepted">✅ ACCEPTED — The input string is valid.</div>`;
+    document.getElementById('sim-status').textContent=`Accepted in ${result.steps.length} steps`;
+  }else{
+    const lastStep = result.steps[result.steps.length-1];
+    vb.innerHTML=`<div class="verdict rejected">❌ REJECTED — Parser Error</div>`;
+    document.getElementById('sim-status').textContent=`Rejected at step ${result.steps.length}`;
+  }
+  
+  document.querySelector('[data-tab="trace"]').click();
+});
+
+document.getElementById('step-btn').addEventListener('click', ()=>{
+  if(!CG || !CTD){document.getElementById('sim-status').textContent='Build table first!'; return;}
+  const input=document.getElementById('sim-input').value.trim();
+  if(!input){document.getElementById('sim-status').textContent='Enter input string.'; return;}
+  
+  if(!lastResult){
+    lastResult = runSLRParse(CG, CTD, input); stepIdx = 0;
+    document.getElementById('verdict-box').innerHTML='';
+  }
+  
+  if(stepIdx < lastResult.steps.length) stepIdx++;
+  
+  renderTrace(lastResult, document.getElementById('trace-w'), stepIdx);
+  renderSimTable(lastResult, document.getElementById('sim-output'), stepIdx);
+  document.getElementById('sim-status').textContent=`Step ${stepIdx}/${lastResult.steps.length}`;
+  
+  if(stepIdx >= lastResult.steps.length){
+    const vb = document.getElementById('verdict-box');
+    if(lastResult.accepted) vb.innerHTML=`<div class="verdict accepted">✅ ACCEPTED</div>`;
+    else vb.innerHTML=`<div class="verdict rejected">❌ REJECTED</div>`;
+  }
+  document.querySelector('[data-tab="trace"]').click();
+});
+
+document.getElementById('reset-btn').addEventListener('click', ()=>{
+  lastResult=null; stepIdx=0;
+  document.getElementById('trace-w').innerHTML='<div class="empty">Reset. Click <b>Parse</b> or <b>Step-by-Step</b>.</div>';
+  document.getElementById('sim-output').innerHTML='';
+  document.getElementById('verdict-box').innerHTML='';
+  document.getElementById('sim-status').textContent='Reset';
+});
+
+document.getElementById('clear').addEventListener('click', ()=>{
+  document.getElementById('grammar').value=''; document.getElementById('status').textContent='Ready';
+  CG=null; CTD=null; lastResult=null; stepIdx=0;
+  ['table-w','first-w','follow-w','grammar-w','states-w'].forEach(id=>document.getElementById(id).innerHTML='<div class="empty">Click <b>Build Parse Table</b>.</div>');
+  document.getElementById('trace-w').innerHTML='<div class="empty">Build table, then parse.</div>';
+  document.getElementById('sum-stats').innerHTML='';
+  document.getElementById('console').innerHTML='<div class="cl info">Click <b>Build Parse Table</b>.</div>';
+  document.getElementById('sim-output').innerHTML='';
+  document.getElementById('verdict-box').innerHTML='';
+  document.getElementById('sim-status').textContent='';
+});
+
+document.getElementById('sim-input').addEventListener('input', ()=>{
+  lastResult=null; stepIdx=0;
+  document.getElementById('verdict-box').innerHTML='';
+  document.getElementById('sim-status').textContent='';
+});
+
+/* DEMOS */
+document.getElementById('demo1').addEventListener('click', ()=>{
+  document.getElementById('grammar').value=`E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id`;
+  document.getElementById('sim-input').value='id + id * id';
+  document.getElementById('build').click();
+});
+document.getElementById('demo2').addEventListener('click', ()=>{
+  // Dangling else
+  document.getElementById('grammar').value=`S -> i E t S | i E t S e S | a\nE -> b`;
+  document.getElementById('sim-input').value='i b t i b t a e a';
+  document.getElementById('build').click();
+});
+document.getElementById('demo3').addEventListener('click', ()=>{
+  document.getElementById('grammar').value=`L -> L , id | id`;
+  document.getElementById('sim-input').value='id , id , id';
+  document.getElementById('build').click();
+});
+</script>
+</body>
+</html>

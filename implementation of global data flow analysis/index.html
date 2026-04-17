@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Compiler Design: Global Data Flow Analysis</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#818cf8;--state-bg:#0f172a;--state-border:#334155;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px}
+.page{max-width:1440px;margin:0 auto}
+header{text-align:center;margin-bottom:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22)}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px}
+.sub{color:var(--muted);font-size:13px;max-width:850px;margin:0 auto;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:980px){.grid{grid-template-columns:1fr 1.15fr}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+textarea{width:100%;min-height:260px;padding:14px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:14px;outline:none;line-height:1.6;letter-spacing:1px;resize:vertical;tab-size:4}
+textarea:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7)}
+.controls{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn-run{background:linear-gradient(135deg,var(--green),#10b981);box-shadow:0 6px 18px rgba(52,211,153,.25)}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:80px}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap}
+.pbtn:first-child{border-radius:8px 0 0 8px}
+.pbtn:last-child{border-radius:0 8px 8px 0}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700}
+.hidden{display:none!important}
+.tw{max-height:600px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;background:#071427;z-index:1}
+th,td{padding:9px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:10.5px}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px}
+.sb{display:inline-block;padding:3px 7px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600;margin:1px;white-space:nowrap}
+.sb-def{color:var(--accent2);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.15)}
+.sb-gen{color:var(--green);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15)}
+.sb-kill{color:var(--red);background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.15)}
+.sb-in{color:var(--purple);background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.15)}
+.sb-out{color:var(--orange);background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.15)}
+
+.parse-summary{display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:8px;margin-bottom:14px}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-value{font-size:22px;font-family:"JetBrains Mono",monospace;font-weight:800;color:var(--accent);letter-spacing:1px;word-break:break-all}
+.stat-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:14px;min-height:160px;max-height:560px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:13px}
+.cl{line-height:1.7}.cl.info{color:var(--muted)}.cl.ok{color:var(--green)}.cl.err{color:var(--red)}.cl.out{color:#e2e8f0}
+.help-box{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:16px;font-size:12.5px;line-height:1.6}
+.help-box h3{color:var(--accent);font-size:13px;margin-bottom:8px}
+.th-group{text-align:center!important;border-bottom:2px solid var(--border);background:#0b192e}
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">🌐 Global Data Flow Analysis</div>
+  <h1>Reaching Definitions Framework</h1>
+  <p class="sub">Parse a Control Flow Graph (CFG) of basic blocks to perform iterative Data Flow Analysis. Computes GEN, KILL, IN, and OUT sets to determine which variable definitions reach which blocks.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">📝 Basic Blocks & Flow (TAC)</div>
+    <textarea id="code-input" placeholder="e.g.&#10;B1:&#10;i = 1&#10;j = 1&#10;&#10;B2:&#10;a = a + i&#10;goto B2" spellcheck="false">B1:
+i = 1
+j = 1
+a = 0
+
+B2:
+a = a + 1
+j = j - 1
+if j > 0 goto B2
+
+B3:
+i = i + 1
+goto B2</textarea>
+    <div class="controls">
+      <button class="btn btn-run" id="build">⚡ Analyze Flow</button>
+      <button class="btn-sec" id="demo1">Loop Flow</button>
+      <button class="btn-sec" id="demo2">Branch Flow</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <div class="help-box">
+      <h3>📖 Syntax & Semantics</h3>
+      <div>• <strong>Blocks:</strong> Labeled with a colon (e.g. <code>B1:</code>, <code>Loop:</code>).</div>
+      <div>• <strong>Definitions:</strong> Assignments like <code>x = y + z</code> will automatically be assigned an ID (e.g. <code>d1</code>, <code>d2</code>).</div>
+      <div>• <strong>Control Flow:</strong> Use <code>goto BlockName</code> or <code>if cond goto BlockName</code>. Blocks fall through automatically to the next block if no unconditional goto is present.</div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="cfg">CFG Graph</button>
+      <button class="pbtn" data-tab="genkill">GEN / KILL Sets</button>
+      <button class="pbtn" data-tab="inout">IN / OUT Sets</button>
+      <button class="pbtn" data-tab="summary">Analysis Summary</button>
+    </div>
+    
+    <div id="panel-cfg">
+      <div id="cfg-w" style="width:100%; min-height: 400px; display:flex; justify-content:center; align-items:flex-start;">
+        <div class="empty">Click <b>Analyze Flow</b> to map the CFG.</div>
+      </div>
+    </div>
+
+    <div id="panel-genkill" class="hidden">
+      <div class="tw" id="genkill-w">
+        <div class="empty">Click <b>Analyze Flow</b> to view sets.</div>
+      </div>
+    </div>
+
+    <div id="panel-inout" class="hidden">
+      <div class="tw" id="inout-w">
+        <div class="empty">Click <b>Analyze Flow</b> to view sets.</div>
+      </div>
+    </div>
+
+    <div id="panel-summary" class="hidden">
+      <div id="sum-stats">
+        <div class="empty">Click <b>Analyze Flow</b> to view results.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   PARSER & ENGINE LOGIC
+   ═══════════════════════════════════════════════════ */
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function parseCode(text) {
+  let lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
+  let blocks = {};
+  let defs = {};
+  let currentBlock = null;
+  let defCounter = 1;
+  let blockOrder = [];
+
+  for (let line of lines) {
+    if (line.endsWith(':')) {
+      let bName = line.slice(0, -1).trim();
+      currentBlock = bName;
+      if(!blocks[bName]) {
+        blocks[bName] = { id: bName, lines: [], defs: [], succ: new Set(), pred: new Set(), hasUncond: false };
+        blockOrder.push(bName);
+      }
+    } else {
+      if (!currentBlock) {
+        currentBlock = 'Start';
+        blocks[currentBlock] = { id: currentBlock, lines: [], defs: [], succ: new Set(), pred: new Set(), hasUncond: false };
+        blockOrder.push(currentBlock);
+      }
+      
+      let stmt = { text: line, isDef: false, defId: null, varName: null };
+      
+      // Match definitions like 'x = ...' but ignore comparative '=='
+      let defMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
+      if (defMatch && !line.includes('==')) {
+        stmt.isDef = true;
+        stmt.defId = 'd' + defCounter++;
+        stmt.varName = defMatch[1].trim();
+        defs[stmt.defId] = { id: stmt.defId, varName: stmt.varName, block: currentBlock, text: line };
+        blocks[currentBlock].defs.push(stmt.defId);
+      }
+
+      // Check for jumps
+      let gotoMatch = line.match(/goto\s+([a-zA-Z0-9_]+)/);
+      if (gotoMatch) {
+        let dest = gotoMatch[1];
+        blocks[currentBlock].succ.add(dest);
+        if (!line.startsWith('if')) {
+          blocks[currentBlock].hasUncond = true;
+        }
+      }
+
+      blocks[currentBlock].lines.push(stmt);
+    }
+  }
+
+  // Implicit fallthroughs
+  for (let i = 0; i < blockOrder.length - 1; i++) {
+    let b = blocks[blockOrder[i]];
+    if (!b.hasUncond) {
+      b.succ.add(blockOrder[i+1]);
+    }
+  }
+
+  // Calculate Predecessors
+  for (let bName of blockOrder) {
+    for (let s of blocks[bName].succ) {
+      if (!blocks[s]) {
+        // Create dummy destination block if it doesn't exist
+        blocks[s] = { id: s, lines: [], defs: [], succ: new Set(), pred: new Set(), hasUncond: false };
+        blockOrder.push(s);
+      }
+      blocks[s].pred.add(bName);
+    }
+  }
+
+  return { blocks, defs, blockOrder };
+}
+
+function computeReachingDefinitions(parsed) {
+  let { blocks, defs, blockOrder } = parsed;
+
+  // 1. GEN and KILL calculation
+  for (let bName of blockOrder) {
+    let b = blocks[bName];
+    b.gen = new Set();
+    b.kill = new Set();
+
+    let definedVars = new Set();
+    // GEN: scan backwards for the final definition of a variable in this block
+    for (let i = b.lines.length - 1; i >= 0; i--) {
+      let stmt = b.lines[i];
+      if (stmt.isDef && !definedVars.has(stmt.varName)) {
+        b.gen.add(stmt.defId);
+        definedVars.add(stmt.varName);
+      }
+    }
+
+    // KILL: definitions of 'definedVars' outside of this block
+    for (let dId in defs) {
+      let d = defs[dId];
+      if (d.block !== bName && definedVars.has(d.varName)) {
+        b.kill.add(d.id);
+      }
+    }
+
+    // Initialize iterative sets
+    b.in = new Set();
+    b.out = new Set(b.gen);
+  }
+
+  // 2. Fixed Point Iteration Engine
+  let changed = true;
+  let iterations = 0;
+  
+  while (changed && iterations < 100) { // cap to prevent infinite loops
+    changed = false;
+    iterations++;
+    
+    for (let bName of blockOrder) {
+      let b = blocks[bName];
+      
+      // IN[B] = Union(OUT[P] for P in predecessors(B))
+      let newIn = new Set();
+      for (let pName of b.pred) {
+        if (blocks[pName]) {
+          blocks[pName].out.forEach(d => newIn.add(d));
+        }
+      }
+      b.in = newIn;
+
+      // OUT[B] = GEN[B] Union (IN[B] - KILL[B])
+      let newOut = new Set(b.gen);
+      b.in.forEach(d => {
+        if (!b.kill.has(d)) {
+          newOut.add(d);
+        }
+      });
+
+      // Because reaching definitions sets only grow, a size check detects changes
+      if (newOut.size !== b.out.size) {
+        changed = true;
+        b.out = newOut;
+      }
+    }
+  }
+
+  return { parsed, iterations };
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERING FUNCTIONS
+   ═══════════════════════════════════════════════════ */
+function formatSet(set, cls) {
+  if (set.size === 0) return `<span style="color:var(--muted)">∅</span>`;
+  return [...set].sort().map(d => `<span class="sb ${cls}">${d}</span>`).join(' ');
+}
+
+function renderGenKill(parsed, container) {
+  let { blocks, blockOrder, defs } = parsed;
+  let h = `<table><thead>
+    <tr><th colspan="4" class="th-group">Local Block Sets</th></tr>
+    <tr><th style="width:15%">Block</th><th>Definitions</th><th>GEN Set</th><th>KILL Set</th></tr>
+    </thead><tbody>`;
+  
+  if(blockOrder.length === 0) h += `<tr><td colspan="4" class="empty">No blocks found.</td></tr>`;
+
+  for (let bName of blockOrder) {
+    let b = blocks[bName];
+    
+    let defHtml = b.lines.map(stmt => {
+      if (stmt.isDef) return `<div style="padding:2px 0"><span class="sb sb-def">${stmt.defId}</span> <span style="color:var(--text)">${esc(stmt.text)}</span></div>`;
+      return `<div style="padding:2px 0; color:var(--muted)">${esc(stmt.text)}</div>`;
+    }).join('');
+
+    if (b.lines.length === 0) defHtml = `<span style="color:var(--muted)">Empty Block</span>`;
+
+    h += `<tr>
+      <td class="val" style="color:var(--accent);font-weight:bold">${esc(bName)}</td>
+      <td class="val">${defHtml}</td>
+      <td class="val">${formatSet(b.gen, 'sb-gen')}</td>
+      <td class="val">${formatSet(b.kill, 'sb-kill')}</td>
+    </tr>`;
+  }
+  h += `</tbody></table>`;
+  container.innerHTML = h;
+}
+
+function renderInOut(parsed, container) {
+  let { blocks, blockOrder } = parsed;
+  let h = `<table><thead>
+    <tr><th colspan="3" class="th-group">Global Data Flow Sets</th></tr>
+    <tr><th style="width:15%">Block</th><th>IN Set</th><th>OUT Set</th></tr>
+    </thead><tbody>`;
+  
+  if(blockOrder.length === 0) h += `<tr><td colspan="3" class="empty">No blocks found.</td></tr>`;
+
+  for (let bName of blockOrder) {
+    let b = blocks[bName];
+    h += `<tr>
+      <td class="val" style="color:var(--accent);font-weight:bold">${esc(bName)}</td>
+      <td class="val">${formatSet(b.in, 'sb-in')}</td>
+      <td class="val">${formatSet(b.out, 'sb-out')}</td>
+    </tr>`;
+  }
+  h += `</tbody></table>`;
+  container.innerHTML = h;
+}
+
+function renderCFG(parsed, container) {
+  let { blocks, blockOrder } = parsed;
+  if(blockOrder.length === 0) {
+    container.innerHTML = `<div class="empty">No control flow graph to render.</div>`;
+    return;
+  }
+
+  // Layout parameters
+  let ySpacing = 120;
+  let xCenter = 250;
+  let rectW = 120;
+  let rectH = 50;
+
+  let width = 500;
+  let height = blockOrder.length * ySpacing + 100;
+
+  let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8" />
+            </marker>
+          </defs>`;
+
+  // Map coordinates
+  let coords = {};
+  for(let i=0; i<blockOrder.length; i++) {
+    coords[blockOrder[i]] = {
+      x: xCenter,
+      y: 50 + (i * ySpacing),
+      idx: i
+    };
+  }
+
+  // Draw Edges
+  for(let bName of blockOrder) {
+    let b = blocks[bName];
+    let cFrom = coords[bName];
+
+    for(let sName of b.succ) {
+      let cTo = coords[sName];
+      if(!cTo) continue;
+
+      if (cTo.idx === cFrom.idx + 1) {
+        // Straight down
+        svg += `<line x1="${cFrom.x}" y1="${cFrom.y + rectH}" x2="${cTo.x}" y2="${cTo.y - 5}" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>`;
+      } else if (cTo.idx < cFrom.idx) {
+        // Back edge (curve left)
+        let cX = cFrom.x - 120 - ((cFrom.idx - cTo.idx) * 20);
+        svg += `<path d="M ${cFrom.x - rectW/2} ${cFrom.y + rectH/2} Q ${cX} ${(cFrom.y + cTo.y)/2} ${cTo.x - rectW/2 - 5} ${cTo.y + rectH/2}" fill="none" stroke="#f472b6" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)"/>`;
+      } else {
+        // Forward skip (curve right)
+        let cX = cFrom.x + 120 + ((cTo.idx - cFrom.idx) * 20);
+        svg += `<path d="M ${cFrom.x + rectW/2} ${cFrom.y + rectH/2} Q ${cX} ${(cFrom.y + cTo.y)/2} ${cTo.x + rectW/2 + 5} ${cTo.y + rectH/2}" fill="none" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)"/>`;
+      }
+    }
+  }
+
+  // Draw Nodes
+  for(let bName of blockOrder) {
+    let c = coords[bName];
+    let isTerm = blocks[bName].succ.size === 0;
+    
+    svg += `<rect x="${c.x - rectW/2}" y="${c.y}" width="${rectW}" height="${rectH}" rx="8" fill="#1e293b" stroke="${isTerm?'#34d399':'#818cf8'}" stroke-width="2" />`;
+    svg += `<text x="${c.x}" y="${c.y + 20}" fill="#e5e7eb" font-family="monospace" font-weight="bold" font-size="14" text-anchor="middle">${esc(bName)}</text>`;
+    
+    let stCount = blocks[bName].lines.length;
+    svg += `<text x="${c.x}" y="${c.y + 38}" fill="#94a3b8" font-family="monospace" font-size="11" text-anchor="middle">${stCount} Statements</text>`;
+  }
+
+  svg += `</svg>`;
+  container.innerHTML = `<div style="overflow-x:auto; background:#020617; border-radius:8px; border:1px solid var(--border);">${svg}</div>`;
+}
+
+function renderSummary(result, container) {
+  let { parsed, iterations } = result;
+  let defCount = Object.keys(parsed.defs).length;
+  let blockCount = parsed.blockOrder.length;
+
+  let h = `
+    <div class="parse-summary">
+      <div class="stat-card">
+        <div class="stat-label">Basic Blocks</div>
+        <div class="stat-value" style="color:var(--accent)">${blockCount}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Definitions</div>
+        <div class="stat-value" style="color:var(--accent2)">${defCount}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Convergence Iterations</div>
+        <div class="stat-value" style="color:var(--green)">${iterations}</div>
+      </div>
+    </div>
+  `;
+
+  h += `<div class="console-wrap" style="margin-top:12px">
+    <div class="cl info">// Definition Dictionary Registry</div>`;
+  
+  for (let dId in parsed.defs) {
+    let d = parsed.defs[dId];
+    h += `<div class="cl out"><span class="sb sb-def">${d.id}</span> defined in <span style="color:var(--accent)">${d.block}</span> : <span style="color:var(--text)">${esc(d.text)}</span></div>`;
+  }
+  
+  h += `</div>`;
+  container.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE & EVENTS
+   ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    ['cfg', 'genkill', 'inout', 'summary'].forEach(p => {
+      document.getElementById('panel-' + p).classList.toggle('hidden', p !== target);
+    });
+  });
+});
+
+document.getElementById('build').addEventListener('click', () => {
+  const code = document.getElementById('code-input').value;
+  const status = document.getElementById('status');
+  
+  try {
+    if (!code.trim()) {
+      status.textContent = 'Error: Empty input.';
+      return;
+    }
+
+    // Process
+    const parsed = parseCode(code);
+    const result = computeReachingDefinitions(parsed);
+
+    // Render
+    renderCFG(parsed, document.getElementById('cfg-w'));
+    renderGenKill(parsed, document.getElementById('genkill-w'));
+    renderInOut(parsed, document.getElementById('inout-w'));
+    renderSummary(result, document.getElementById('sum-stats'));
+
+    status.textContent = `✅ Analyzed: ${parsed.blockOrder.length} Blocks, converged in ${result.iterations} passes.`;
+    document.querySelector('[data-tab="cfg"]').click();
+    
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message; 
+    console.error(e);
+  }
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('code-input').value = ''; 
+  document.getElementById('status').textContent = 'Ready';
+  document.getElementById('sum-stats').innerHTML = '<div class="empty">Click <b>Analyze Flow</b> to view results.</div>';
+  document.getElementById('genkill-w').innerHTML = '<div class="empty">Click <b>Analyze Flow</b> to view.</div>';
+  document.getElementById('inout-w').innerHTML = '<div class="empty">Click <b>Analyze Flow</b> to view.</div>';
+  document.getElementById('cfg-w').innerHTML = '<div class="empty">Click <b>Analyze Flow</b> to map the CFG.</div>';
+});
+
+/* DEMOS */
+document.getElementById('demo1').addEventListener('click', () => {
+  document.getElementById('code-input').value = `B1:
+i = 1
+j = 1
+a = 0
+
+B2:
+a = a + 1
+j = j - 1
+if j > 0 goto B2
+
+B3:
+i = i + 1
+goto B2`;
+  document.getElementById('build').click();
+});
+
+document.getElementById('demo2').addEventListener('click', () => {
+  document.getElementById('code-input').value = `B1:
+x = 5
+y = 1
+if x > 0 goto B3
+
+B2:
+y = 2
+goto B4
+
+B3:
+y = 3
+
+B4:
+z = y`;
+  document.getElementById('build').click();
+});
+</script>
+</body>
+</html>

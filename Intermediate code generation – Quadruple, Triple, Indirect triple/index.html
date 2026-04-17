@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Intermediate Code Gen: Quadruples, Triples & Indirect Triples</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#1f2937;--accent:#38bdf8;--accent2:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--purple:#c084fc;--pink:#f472b6;--orange:#fb923c;--indigo:#818cf8;--state-bg:#0f172a;--state-border:#334155;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,rgba(34,211,238,.08),transparent 30%),radial-gradient(circle at 90% 5%,rgba(56,189,248,.07),transparent 30%),var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 40px}
+.page{max-width:1440px;margin:0 auto}
+header{text-align:center;margin-bottom:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,rgba(34,211,238,.14),rgba(56,189,248,.1));color:var(--accent);font-weight:700;font-size:13px;border:1px solid rgba(56,189,248,.22)}
+h1{font-size:26px;letter-spacing:-.4px;margin:10px 0 4px}
+.sub{color:var(--muted);font-size:13px;max-width:850px;margin:0 auto;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:980px){.grid{grid-template-columns:1fr 1.15fr}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.4);padding:18px;display:flex;flex-direction:column}
+.card-title{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+input[type="text"]{width:100%;padding:14px;border-radius:10px;border:1px solid var(--border);background:#080f1e;color:#e2e8f0;font-family:"JetBrains Mono","Fira Code",monospace;font-size:15px;outline:none;line-height:1.6;letter-spacing:1px}
+input[type="text"]:focus{box-shadow:0 0 0 3px rgba(56,189,248,.12);border-color:rgba(56,189,248,.7)}
+.controls{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border:none;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(56,189,248,.25);font-size:12.5px;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn-run{background:linear-gradient(135deg,var(--green),#10b981);box-shadow:0 6px 18px rgba(52,211,153,.25)}
+.btn-sec{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:var(--accent);border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:600;font-size:12.5px}
+.btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12.5px}
+.status{color:var(--muted);font-size:12px;flex:1;min-width:80px}
+.pbar{display:flex;gap:0;margin-bottom:12px;flex-wrap:wrap}
+.pbtn{padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;white-space:nowrap}
+.pbtn:first-child{border-radius:8px 0 0 8px}
+.pbtn:last-child{border-radius:0 8px 8px 0}
+.pbtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#071524;border-color:var(--accent);font-weight:700}
+.hidden{display:none!important}
+.tw{max-height:600px;overflow:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;background:#071427;z-index:1}
+th,td{padding:9px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px;font-size:10.5px}
+td.val{font-family:"JetBrains Mono",monospace;color:#cbd5e1}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px}
+.sb{display:inline-block;padding:3px 7px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600;margin:1px;white-space:nowrap}
+.sb-t{color:var(--green);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15)}
+.sb-op{color:var(--orange);background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.15)}
+.sb-paren{color:var(--muted);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.sb-temp{color:var(--pink);background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.15)}
+.sb-idx{color:var(--accent2);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.15)}
+
+.parse-summary{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+.stat-card{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-value{font-size:18px;font-family:"JetBrains Mono",monospace;font-weight:800;color:var(--accent);letter-spacing:1px;word-break:break-all}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.console-wrap{border-radius:8px;border:1px solid var(--border);background:#020617;padding:14px;min-height:160px;max-height:560px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:13px}
+.cl{line-height:1.7}.cl.info{color:var(--muted)}.cl.ok{color:var(--green)}.cl.err{color:var(--red)}.cl.warn{color:var(--yellow)}.cl.out{color:#e2e8f0}.cl.hl{color:var(--accent)}
+.help-box{background:rgba(56,189,248,.04);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:16px;font-size:12.5px;line-height:1.6}
+.help-box h3{color:var(--accent);font-size:13px;margin-bottom:8px}
+.help-box code{background:rgba(0,0,0,.3);padding:2px 5px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--green)}
+.th-group{text-align:center!important;border-bottom:2px solid var(--border);background:#0b192e}
+.split-tables{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.split-tables > div{flex:1;min-width:300px}
+
+footer{margin-top:18px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div class="pill">💻 Compiler Design</div>
+  <h1>Intermediate Code Generation</h1>
+  <p class="sub">Convert Assignment/Infix expressions to Three-Address Code and visualize them in standard memory representations: Quadruples, Triples, and Indirect Triples.</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-title">📝 Expression Input</div>
+    <input type="text" id="expression" placeholder="e.g. X = A + B * C" autocomplete="off" spellcheck="false" value="X = A + B * C">
+    <div class="controls">
+      <button class="btn btn-run" id="build">⚡ Generate Code</button>
+      <button class="btn-sec" id="demo1">Simple</button>
+      <button class="btn-sec" id="demo2">Complex</button>
+      <button class="btn-sec" id="demo3">Powers</button>
+      <button class="btn-clear" id="clear">Clear</button>
+      <span class="status" id="status">Ready</span>
+    </div>
+    <div class="help-box">
+      <h3>📖 Supported Syntax & Precedence</h3>
+      <div>• <strong>Assignment:</strong> You can include assignments (e.g. <code>Y = (A+B) * C</code>).</div>
+      <div>• <strong>Operands:</strong> Alphabets or numbers (e.g. <code>A</code>, <code>id1</code>, <code>25</code>).</div>
+      <div>• <strong>Operators:</strong> 
+        <br>&nbsp;&nbsp;<code>^</code> (Highest, Right-Associative)
+        <br>&nbsp;&nbsp;<code>*</code>, <code>/</code> (Medium, Left-Associative)
+        <br>&nbsp;&nbsp;<code>+</code>, <code>-</code> (Low, Left-Associative)
+        <br>&nbsp;&nbsp;<code>=</code> (Lowest, Right-Associative)
+      </div>
+      <div>• <strong>Grouping:</strong> Parentheses <code>(</code> and <code>)</code>.</div>
+      <div><em>Note: Spaces are ignored during tokenization.</em></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="pbar">
+      <button class="pbtn active" data-tab="summary">Summary</button>
+      <button class="pbtn" data-tab="quadruple">Quadruples</button>
+      <button class="pbtn" data-tab="triple">Triples</button>
+      <button class="pbtn" data-tab="indirect">Indirect Triples</button>
+    </div>
+    
+    <div id="panel-summary">
+      <div class="parse-summary" id="sum-stats">
+        <div class="empty">Click <b>Generate Code</b> to view results.</div>
+      </div>
+    </div>
+    
+    <div id="panel-quadruple" class="hidden">
+      <div class="tw" id="quad-w">
+        <div class="empty">Click <b>Generate Code</b> to view Quadruples.</div>
+      </div>
+    </div>
+
+    <div id="panel-triple" class="hidden">
+      <div class="tw" id="trip-w">
+        <div class="empty">Click <b>Generate Code</b> to view Triples.</div>
+      </div>
+    </div>
+
+    <div id="panel-indirect" class="hidden">
+      <div id="ind-trip-w">
+        <div class="tw"><div class="empty">Click <b>Generate Code</b> to view Indirect Triples.</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CONSTANTS & PRECEDENCE LOGIC
+   ═══════════════════════════════════════════════════ */
+const PRECEDENCE = {
+  '^': 4,
+  '*': 3, '/': 3,
+  '+': 2, '-': 2,
+  '=': 1
+};
+
+const IS_RIGHT_ASSOC = {
+  '^': true,
+  '*': false, '/': false,
+  '+': false, '-': false,
+  '=': true
+};
+
+function isOperator(c) {
+  return PRECEDENCE[c] !== undefined;
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════════
+   TOKENIZER
+   ═══════════════════════════════════════════════════ */
+function tokenize(expr) {
+  return expr.match(/[a-zA-Z0-9_.]+|[+*\/\-^()=]/g) || [];
+}
+
+/* ═══════════════════════════════════════════════════
+   INFIX TO POSTFIX (Shunting Yard)
+   ═══════════════════════════════════════════════════ */
+function infixToPostfix(tokens) {
+  let output = [];
+  let stack = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    let t = tokens[i];
+
+    if (t === '(') {
+      stack.push(t);
+    } else if (t === ')') {
+      while (stack.length > 0 && stack[stack.length - 1] !== '(') {
+        output.push(stack.pop());
+      }
+      if (stack.length > 0 && stack[stack.length - 1] === '(') {
+        stack.pop(); // Pop '('
+      }
+    } else if (isOperator(t)) {
+      while (stack.length > 0 && stack[stack.length - 1] !== '(') {
+        let top = stack[stack.length - 1];
+        if (isOperator(top)) {
+          let pTop = PRECEDENCE[top];
+          let pCurr = PRECEDENCE[t];
+          if (pTop > pCurr || (pTop === pCurr && !IS_RIGHT_ASSOC[t])) {
+            output.push(stack.pop());
+            continue;
+          }
+        }
+        break;
+      }
+      stack.push(t);
+    } else {
+      output.push(t);
+    }
+  }
+
+  while (stack.length > 0) {
+    let t = stack.pop();
+    if(t !== '(') output.push(t);
+  }
+
+  return output;
+}
+
+/* ═══════════════════════════════════════════════════
+   INTERMEDIATE CODE GENERATION (Quad, Trip, Indirect)
+   ═══════════════════════════════════════════════════ */
+function generateIntermediateCode(postfixTokens) {
+  let quadStack = [];
+  let tripStack = [];
+
+  let quadruples = [];
+  let triples = [];
+  let indirectTriples = [];
+
+  let tempCounter = 1;
+  let instructionBase = 11; // Standard starting address for indirect triples
+
+  for (let t of postfixTokens) {
+    if (!isOperator(t)) {
+      quadStack.push(t);
+      tripStack.push(t);
+    } else {
+      let qArg2 = quadStack.pop() || 'null';
+      let qArg1 = quadStack.pop() || 'null';
+
+      let tArg2 = tripStack.pop() || 'null';
+      let tArg1 = tripStack.pop() || 'null';
+
+      let tIdx = triples.length;
+
+      if (t === '=') {
+        // Quadruple for Assignment: op: =, arg1: source, arg2: empty, result: destination
+        quadruples.push({ op: '=', arg1: qArg2, arg2: '', result: qArg1 });
+        quadStack.push(qArg1);
+
+        // Triple for Assignment: op: =, arg1: destination, arg2: source
+        triples.push({ index: tIdx, op: '=', arg1: tArg1, arg2: tArg2 });
+        tripStack.push(tArg1); 
+      } else {
+        // Quadruple for Math
+        let qRes = `t${tempCounter++}`;
+        quadruples.push({ op: t, arg1: qArg1, arg2: qArg2, result: qRes });
+        quadStack.push(qRes);
+
+        // Triple for Math
+        triples.push({ index: tIdx, op: t, arg1: tArg1, arg2: tArg2 });
+        tripStack.push(`(${tIdx})`);
+      }
+
+      indirectTriples.push({ statement: instructionBase + tIdx, pointer: `(${tIdx})` });
+    }
+  }
+
+  return { quadruples, triples, indirectTriples };
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERING FUNCTIONS
+   ═══════════════════════════════════════════════════ */
+function formatTokenBadge(t) {
+  if (!t) return '';
+  if (t === '(' || t === ')') return `<span class="sb sb-paren">${t}</span>`;
+  if (isOperator(t)) return `<span class="sb sb-op">${t}</span>`;
+  if (t.startsWith('t') && !isNaN(t.substring(1))) return `<span class="sb sb-temp">${t}</span>`;
+  if (t.startsWith('(') && t.endsWith(')')) return `<span class="sb sb-idx">${t}</span>`;
+  return `<span class="sb sb-t">${esc(t)}</span>`;
+}
+
+function renderQuadruples(quadruples, container) {
+  let h = `<table><thead>
+    <tr><th colspan="4" class="th-group">Quadruples</th></tr>
+    <tr><th>Op</th><th>Arg 1</th><th>Arg 2</th><th>Result</th></tr>
+    </thead><tbody>`;
+  
+  if(quadruples.length === 0) h += `<tr><td colspan="4" class="empty">No operations found.</td></tr>`;
+
+  for (let q of quadruples) {
+    h += `<tr>
+      <td class="val" style="color:var(--orange)">${esc(q.op)}</td>
+      <td class="val">${formatTokenBadge(q.arg1)}</td>
+      <td class="val">${formatTokenBadge(q.arg2)}</td>
+      <td class="val" style="color:var(--pink)">${esc(q.result)}</td>
+    </tr>`;
+  }
+  h += `</tbody></table>`;
+  container.innerHTML = h;
+}
+
+function renderTriples(triples, container) {
+  let h = `<table><thead>
+    <tr><th colspan="4" class="th-group">Triples Table</th></tr>
+    <tr><th>Index</th><th>Op</th><th>Arg 1</th><th>Arg 2</th></tr>
+    </thead><tbody>`;
+  
+  if(triples.length === 0) h += `<tr><td colspan="4" class="empty">No operations found.</td></tr>`;
+
+  for (let t of triples) {
+    h += `<tr>
+      <td class="val" style="color:var(--accent2)">(${t.index})</td>
+      <td class="val" style="color:var(--orange)">${esc(t.op)}</td>
+      <td class="val">${formatTokenBadge(t.arg1)}</td>
+      <td class="val">${formatTokenBadge(t.arg2)}</td>
+    </tr>`;
+  }
+  h += `</tbody></table>`;
+  container.innerHTML = h;
+}
+
+function renderIndirectTriples(indirectTriples, triples, container) {
+  let h = `<div class="split-tables">`;
+  
+  // Left Table: Instruction Array
+  h += `<div class="tw"><table><thead>
+    <tr><th colspan="2" class="th-group">Instruction Array</th></tr>
+    <tr><th>Statement</th><th>Pointer</th></tr>
+    </thead><tbody>`;
+  
+  if(indirectTriples.length === 0) h += `<tr><td colspan="2" class="empty">Empty</td></tr>`;
+
+  for (let it of indirectTriples) {
+    h += `<tr>
+      <td class="val" style="color:var(--green)">${it.statement}</td>
+      <td class="val">${formatTokenBadge(it.pointer)}</td>
+    </tr>`;
+  }
+  h += `</tbody></table></div>`;
+
+  // Right Table: Base Triples
+  h += `<div class="tw"><table><thead>
+    <tr><th colspan="4" class="th-group">Triples Array</th></tr>
+    <tr><th>Index</th><th>Op</th><th>Arg 1</th><th>Arg 2</th></tr>
+    </thead><tbody>`;
+    
+  if(triples.length === 0) h += `<tr><td colspan="4" class="empty">Empty</td></tr>`;
+
+  for (let t of triples) {
+    h += `<tr>
+      <td class="val" style="color:var(--accent2)">(${t.index})</td>
+      <td class="val" style="color:var(--orange)">${esc(t.op)}</td>
+      <td class="val">${formatTokenBadge(t.arg1)}</td>
+      <td class="val">${formatTokenBadge(t.arg2)}</td>
+    </tr>`;
+  }
+  h += `</tbody></table></div>`;
+  
+  h += `</div>`;
+  container.innerHTML = h;
+}
+
+function renderSummary(tokens, postfix, codeRes, container) {
+  let infixStr = tokens.join(' ');
+  let postStr = postfix.join(' ');
+
+  let h = `
+    <div class="stat-card">
+      <div class="stat-label">Original Infix Expression</div>
+      <div class="stat-value" style="color:var(--text)">${esc(infixStr)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Postfix Representation</div>
+      <div class="stat-value" style="color:var(--green)">${esc(postStr)}</div>
+    </div>
+  `;
+
+  h += `<div class="console-wrap" style="margin-top:8px">
+    <div class="cl info">// Generated Three-Address Code (TAC) Equivalent</div>`;
+  for (let q of codeRes.quadruples) {
+    if (q.op === '=') {
+      h += `<div class="cl out"><span style="color:var(--green)">${esc(q.result)}</span> = ${formatTokenBadge(q.arg1)}</div>`;
+    } else {
+      h += `<div class="cl out"><span style="color:var(--pink)">${esc(q.result)}</span> = ${formatTokenBadge(q.arg1)} <span style="color:var(--orange)">${esc(q.op)}</span> ${formatTokenBadge(q.arg2)}</div>`;
+    }
+  }
+  h += `</div>`;
+
+  container.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE & EVENTS
+   ═══════════════════════════════════════════════════ */
+
+// Tabs Switching
+document.querySelectorAll('.pbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.tab;
+    ['summary', 'quadruple', 'triple', 'indirect'].forEach(p => {
+      document.getElementById('panel-' + p).classList.toggle('hidden', p !== target);
+    });
+  });
+});
+
+// Generate Code Logic
+document.getElementById('build').addEventListener('click', () => {
+  const expr = document.getElementById('expression').value;
+  const status = document.getElementById('status');
+  
+  try {
+    const tokens = tokenize(expr);
+    if (tokens.length === 0) {
+      status.textContent = 'Error: Empty expression.';
+      return;
+    }
+
+    // 1. Computations
+    const postfix = infixToPostfix(tokens);
+    const codeRes = generateIntermediateCode(postfix);
+
+    // 2. Rendering
+    renderSummary(tokens, postfix, codeRes, document.getElementById('sum-stats'));
+    renderQuadruples(codeRes.quadruples, document.getElementById('quad-w'));
+    renderTriples(codeRes.triples, document.getElementById('trip-w'));
+    renderIndirectTriples(codeRes.indirectTriples, codeRes.triples, document.getElementById('ind-trip-w'));
+
+    status.textContent = `✅ Success: Generated ${codeRes.quadruples.length} operations.`;
+    document.querySelector('[data-tab="summary"]').click();
+    
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message; 
+    console.error(e);
+  }
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  document.getElementById('expression').value = ''; 
+  document.getElementById('status').textContent = 'Ready';
+  document.getElementById('sum-stats').innerHTML = '<div class="empty">Click <b>Generate Code</b> to view results.</div>';
+  ['quad-w', 'trip-w', 'ind-trip-w'].forEach(id => {
+    document.getElementById(id).innerHTML = `<div class="tw"><div class="empty">Click <b>Generate Code</b> to view.</div></div>`;
+  });
+});
+
+/* DEMOS */
+document.getElementById('demo1').addEventListener('click', () => {
+  document.getElementById('expression').value = `X = A + B * C`;
+  document.getElementById('build').click();
+});
+document.getElementById('demo2').addEventListener('click', () => {
+  document.getElementById('expression').value = `Y = ( A + B ) * ( C - D )`;
+  document.getElementById('build').click();
+});
+document.getElementById('demo3').addEventListener('click', () => {
+  document.getElementById('expression').value = `Z = A ^ B ^ C * D + E`;
+  document.getElementById('build').click();
+});
+
+// Allow Enter key to trigger generation
+document.getElementById('expression').addEventListener('keypress', function (e) {
+  if (e.key === 'Enter') {
+    document.getElementById('build').click();
+  }
+});
+</script>
+</body>
+</html>
